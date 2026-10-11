@@ -690,3 +690,57 @@ def test_a_question_answered_by_a_script_runs_it(risky, kind, route_to):
     if route_to is Route.COMMAND:
         assert plan.action == "run"
         assert plan.target.entity.entity_id == "script.list_alarms"
+
+
+def _cancel_response(target: str, p: float) -> SystemOneResponse:
+    return SystemOneResponse(
+        model="jev",
+        answers={
+            Q.Q_CATEGORY: _choice("cancel", 0.8, "command"),
+            Q.Q_COMPOUND: NoulAnswer(0.02),
+            Q.Q_TARGET_ENTITY: _choice(target, p, Q.NO_SINGLE_ENTITY),
+            Q.Q_TARGET_DOMAIN: _choice("script", 0.8, Q.NO_DOMAIN),
+            Q.Q_TARGET_AREA: _choice(Q.NO_AREA, 0.9),
+            Q.Q_RISKY: NoulAnswer(0.02),
+            Q.Q_HERE_RELATIVE: NoulAnswer(0.1),
+        },
+        input_tokens=0,
+        output_tokens=0,
+        latency_ms=0,
+    )
+
+
+@pytest.mark.parametrize(
+    ("target", "p", "route_to"),
+    [
+        # "Cancel the 8:30 alarm" names the script to run, so it is a command.
+        ("script.cancel_alarm", 0.9, Route.COMMAND),
+        ("script.cancel_alarm", 0.4, Route.CANCEL),
+        (Q.NO_SINGLE_ENTITY, 0.9, Route.CANCEL),
+    ],
+)
+def test_cancelling_a_named_thing_is_a_command(target, p, route_to):
+    from custom_components.typesafe_conversation.extraction import extract
+
+    cancel = CatalogEntity(
+        entity_id="script.cancel_alarm",
+        name="Cancel an alarm",
+        aliases=(),
+        area_id=None,
+        area_name=None,
+        floor_name=None,
+        domain="script",
+        device_class=None,
+        supported_features=0,
+    )
+    plan = route(
+        _cancel_response(target, p),
+        entities_by_id={cancel.entity_id: cancel},
+        extraction=extract("cancel the 8:30 alarm", want_media=False, want_color=False),
+        speaker_area_id=None,
+        available_domains=frozenset({"script"}),
+    )
+    assert plan.route is route_to, plan.reason
+    if route_to is Route.COMMAND:
+        assert plan.action == "run"
+        assert plan.target.entity.entity_id == "script.cancel_alarm"

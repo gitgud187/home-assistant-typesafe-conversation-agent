@@ -152,6 +152,18 @@ def _solid(answer: ChoiceAnswer | None, threshold: float) -> bool:
     )
 
 
+def _names_a_target(
+    response: SystemOneResponse, entities_by_id: dict[str, CatalogEntity]
+) -> bool:
+    """Whether the request solidly names one known entity."""
+    target = response.choice(Q.Q_TARGET_ENTITY)
+    return (
+        _solid(target, T_ENTITY)
+        and target.choice != Q.NO_SINGLE_ENTITY
+        and target.choice in entities_by_id
+    )
+
+
 _ONLY_ACTION: dict[str, str] = {"script": "run", "scene": "activate", "button": "press"}
 """Domains with a single possible action, which a solid target implies."""
 
@@ -181,8 +193,23 @@ def route(
         return Plan(Route.FALLBACK, reason="no category answer", trace=trace)
 
     # -- 0. the user is calling it off ---------------------------------------
+    # "Cancel that" calls it off; "cancel the 8:30 alarm" names something to
+    # act on, and goes down the command path like any other request.
     if category.choice == "cancel" and category.confidence >= T_CATEGORY_CANCEL:
-        return Plan(Route.CANCEL, reason="category=cancel", trace=trace)
+        if not _names_a_target(response, entities_by_id):
+            return Plan(Route.CANCEL, reason="category=cancel", trace=trace)
+        trace["cancel"] = "names a target: treated as a command"
+        return _plan_command(
+            response,
+            entities_by_id=entities_by_id,
+            extraction=extraction,
+            speaker_area_id=speaker_area_id,
+            available_domains=available_domains,
+            always_confirm_risky=always_confirm_risky,
+            catalog_floors=catalog_floors or {},
+            unavailable_ids=unavailable_ids,
+            trace=trace,
+        )
 
     # -- 1. more than one thing was asked for --------------------------------
     if (

@@ -80,7 +80,10 @@ STATIC_QUESTIONS: QuestionSet = {
             ),
             "cancel": (
                 "The user is withdrawing, stopping or dismissing the "
-                "assistant: 'never mind', 'forget it', 'cancel that', 'stop'."
+                "assistant itself, naming nothing in the home: 'never mind', "
+                "'forget it', 'cancel that', 'stop'. Cancelling, stopping or "
+                "removing something in the home - 'cancel the 8:30 alarm', "
+                "'stop the music', 'cancel the timer' - is a command."
             ),
             "unclear": (
                 "The request is empty, garbled, an unfinished fragment, or "
