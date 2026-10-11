@@ -46,6 +46,7 @@ from .script_fields import (
     ScriptField,
     ScriptFields,
     async_script_fields,
+    clock,
     script_service,
 )
 from .system_one import (
@@ -780,7 +781,7 @@ class TypeSafeAgent:
                 description=fields.description,
                 schema=fields.json_schema([a.area_id for a in self.catalog.areas]),
                 speaker_area=self._speaker_area_name(user_input),
-                local_time=now.strftime("%Y-%m-%d %H:%M"),
+                local_time=f"{now:%Y-%m-%d %H:%M} ({clock(f'{now:%H:%M}')})",
                 weekday=now.strftime("%A"),
                 earlier=earlier,
                 known=known,

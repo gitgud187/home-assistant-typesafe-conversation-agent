@@ -13,6 +13,7 @@ from homeassistant.components import conversation
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import intent
 from homeassistant.setup import async_setup_component
+from homeassistant.util import dt as dt_util
 
 from custom_components.typesafe_conversation import questions as Q
 from custom_components.typesafe_conversation.actions import spec_for
@@ -22,6 +23,7 @@ from custom_components.typesafe_conversation.router import Plan, Route, Target, 
 from custom_components.typesafe_conversation.script_fields import (
     ScriptField,
     async_script_fields,
+    clock,
     describe_values,
 )
 from custom_components.typesafe_conversation.system_one import (
@@ -145,6 +147,12 @@ async def test_values_are_checked_against_each_selector(hass: HomeAssistant):
 def test_values_are_said_in_plain_words():
     assert describe_values({"t": "05:15:00", "l": "upstairs"}) == "5:15 AM, upstairs"
     assert describe_values({"t": "17:05"}) == "5:05 PM"
+
+
+def test_a_clock_time_reads_in_twelve_hours():
+    assert clock("15:44") == "3:44 PM"
+    assert clock("00:30:00") == "12:30 AM"
+    assert clock("pack the bag") is None
 
 
 def test_a_field_without_a_selector_takes_text():
@@ -279,6 +287,23 @@ async def test_a_script_runs_with_the_values_the_model_filled(hass: HomeAssistan
 
     assert _speech(response) == "Alarm set for 05:15:00 upstairs."
     assert llm.fill_fields.await_args.kwargs["title"] == "Set an alarm"
+
+
+async def test_the_model_sees_the_time_in_both_forms(hass: HomeAssistant):
+    """A bare "4:30" said at 3:44 PM only resolves to 16:30 against the clock."""
+    await _scripts(hass)
+    llm = MagicMock()
+    llm.fill_fields = AsyncMock(
+        return_value={"alarm_time": "16:30:00", "location": "upstairs"}
+    )
+    now = dt_util.as_local(dt_util.parse_datetime("2026-10-10T19:44:00+00:00"))
+
+    with patch(f"{AGENT}.dt_util.now", return_value=now):
+        await _say(_agent(hass, llm, {}), "set an alarm for 4:30")
+
+    local_time = llm.fill_fields.await_args.kwargs["local_time"]
+    assert local_time == f"{now:%Y-%m-%d %H:%M} ({clock(f'{now:%H:%M}')})"
+    assert local_time.endswith("M)")
 
 
 async def test_a_missing_value_is_asked_for_then_used(hass: HomeAssistant):

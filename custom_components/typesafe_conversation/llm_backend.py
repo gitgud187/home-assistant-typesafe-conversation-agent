@@ -100,7 +100,16 @@ tells you how to work it out (for example from the room the user is in).
 - If some values are already settled, give a settled field again only when the \
 latest reply changes it. Never fill a settled field from a field's default.
 - Times are 24-hour HH:MM:SS. "5.15 a.m." is 05:15:00, "quarter to seven in the \
-evening" is 18:45:00.
+evening" is 18:45:00, "noon" is 12:00:00, "midnight" is 00:00:00, "half four" is \
+4:30 and "quarter past 8" is 8:15.
+- A time said without AM/PM or a part of the day is whichever of the two comes \
+next from now. At 3:44 PM, "4:30" is 16:30:00. At 10 PM, "6" is 06:00:00. At \
+11 PM, "12:30" is 00:30:00.
+- For a date or date-and-time field, the same rule sets the date: at 3:44 PM, \
+"4:30" is today at 16:30; at 10 PM, "6" is tomorrow at 06:00. Never give a moment \
+that has already passed unless the user asked for one.
+- A weekday is its next occurrence; today counts only while the time asked for is \
+still ahead. "Tomorrow morning" said between midnight and 5 AM is later today.
 
 The user is in: {speaker_area}
 It is now {local_time}, {weekday}.
