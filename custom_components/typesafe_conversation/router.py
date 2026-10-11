@@ -194,27 +194,18 @@ def route(
 
     # -- 0. the user is calling it off ---------------------------------------
     # "Cancel that" calls it off; "cancel the 8:30 alarm" names something to
-    # act on, and goes down the command path like any other request.
-    if category.choice == "cancel" and category.confidence >= T_CATEGORY_CANCEL:
+    # act on, and is routed from here on like any other command.
+    kind = category.choice
+    if kind == "cancel" and category.confidence >= T_CATEGORY_CANCEL:
         if not _names_a_target(response, entities_by_id):
             return Plan(Route.CANCEL, reason="category=cancel", trace=trace)
         trace["cancel"] = "names a target: treated as a command"
-        return _plan_command(
-            response,
-            entities_by_id=entities_by_id,
-            extraction=extraction,
-            speaker_area_id=speaker_area_id,
-            available_domains=available_domains,
-            always_confirm_risky=always_confirm_risky,
-            catalog_floors=catalog_floors or {},
-            unavailable_ids=unavailable_ids,
-            trace=trace,
-        )
+        kind = "command"
 
     # -- 1. more than one thing was asked for --------------------------------
     if (
         compound >= NOUL_COMPOUND_HIGH
-        and category.choice == "command"
+        and kind == "command"
         and category.confidence >= T_CATEGORY_COMPOUND
     ):
         return Plan(Route.COMPOUND, reason=f"compound={compound:.2f}", trace=trace)
@@ -227,18 +218,18 @@ def route(
         )
 
     # -- 2. nothing usable ----------------------------------------------------
-    if category.choice == "unclear" and category.confidence >= T_CATEGORY_UNCLEAR:
+    if kind == "unclear" and category.confidence >= T_CATEGORY_UNCLEAR:
         return Plan(Route.FALLBACK, reason="category=unclear", trace=trace)
 
     # -- 3. general knowledge -------------------------------------------------
-    if category.choice == "information" and _solid(category, T_CATEGORY_INFORMATION):
+    if kind == "information" and _solid(category, T_CATEGORY_INFORMATION):
         return Plan(Route.INFORMATION, reason="category=information", trace=trace)
 
     query_kind = response.choice(Q.Q_QUERY_KIND)
     trace["query_kind"] = _describe(query_kind)
 
     # -- 4. a question about the home ----------------------------------------
-    if category.choice == "query" and category.confidence >= T_CATEGORY_QUERY:
+    if kind == "query" and category.confidence >= T_CATEGORY_QUERY:
         kind = query_kind.choice if _solid(query_kind, T_QUERY_KIND) else "needs_prose"
         plan = _plan_query(
             response,
@@ -250,7 +241,7 @@ def route(
         return plan
 
     # -- 5. a command ---------------------------------------------------------
-    if category.choice == "command":
+    if kind == "command":
         return _plan_command(
             response,
             entities_by_id=entities_by_id,

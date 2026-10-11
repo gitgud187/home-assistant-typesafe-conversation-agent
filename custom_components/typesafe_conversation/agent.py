@@ -320,6 +320,10 @@ class TypeSafeAgent:
         plan = hierarchy.plan_entity_stage(response, entities, max_options=max_options)
         LOGGER.debug("Entity stage for %r: %s", text, plan.trace)
         if plan.ask_room is not None:
+            category = response.choice(Q.Q_CATEGORY)
+            if category is not None and category.choice == "cancel":
+                # Never answer a cancel with "which room?"; it stays a cancel.
+                return response, entities
             raise _AskForRoom
         if plan.stage is None:
             return response, entities

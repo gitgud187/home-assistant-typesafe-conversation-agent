@@ -692,12 +692,14 @@ def test_a_question_answered_by_a_script_runs_it(risky, kind, route_to):
         assert plan.target.entity.entity_id == "script.list_alarms"
 
 
-def _cancel_response(target: str, p: float) -> SystemOneResponse:
+def _cancel_response(
+    target: str, p: float, compound: float = 0.02
+) -> SystemOneResponse:
     return SystemOneResponse(
         model="jev",
         answers={
             Q.Q_CATEGORY: _choice("cancel", 0.8, "command"),
-            Q.Q_COMPOUND: NoulAnswer(0.02),
+            Q.Q_COMPOUND: NoulAnswer(compound),
             Q.Q_TARGET_ENTITY: _choice(target, p, Q.NO_SINGLE_ENTITY),
             Q.Q_TARGET_DOMAIN: _choice("script", 0.8, Q.NO_DOMAIN),
             Q.Q_TARGET_AREA: _choice(Q.NO_AREA, 0.9),
@@ -744,3 +746,63 @@ def test_cancelling_a_named_thing_is_a_command(target, p, route_to):
     if route_to is Route.COMMAND:
         assert plan.action == "run"
         assert plan.target.entity.entity_id == "script.cancel_alarm"
+
+
+def test_cancelling_a_named_thing_and_more_is_split():
+    """ "Cancel the 8:30 alarm and turn off the lights" is two commands."""
+    from custom_components.typesafe_conversation.extraction import extract
+
+    cancel = CatalogEntity(
+        entity_id="script.cancel_alarm",
+        name="Cancel an alarm",
+        aliases=(),
+        area_id=None,
+        area_name=None,
+        floor_name=None,
+        domain="script",
+        device_class=None,
+        supported_features=0,
+    )
+    plan = route(
+        _cancel_response("script.cancel_alarm", 0.9, compound=0.95),
+        entities_by_id={cancel.entity_id: cancel},
+        extraction=extract(
+            "cancel the 8:30 alarm and turn off the lights",
+            want_media=False,
+            want_color=False,
+        ),
+        speaker_area_id=None,
+        available_domains=frozenset({"script", "light"}),
+    )
+    assert plan.route is Route.COMPOUND, plan.reason
+
+
+async def test_a_cancel_is_never_answered_with_which_room(hass: HomeAssistant):
+    from custom_components.typesafe_conversation.hierarchy import (
+        AskForRoom,
+        StagePlan,
+    )
+
+    agent = TypeSafeAgent(
+        hass,
+        MagicMock(entities=(), areas=[]),
+        MagicMock(),
+        MagicMock(),
+        AgentSettings(),
+        traces=[],
+        pending_fills={},
+    )
+    response = _cancel_response(Q.NO_SINGLE_ENTITY, 0.9)
+    agent.jev.async_ask = AsyncMock(return_value=response)
+    agent._structural_questions = MagicMock(return_value={})
+    with (
+        patch(f"{AGENT}.build_request", return_value=({"request": {}}, {})),
+        patch(f"{AGENT}.hierarchy.needs_entity_stage", return_value=True),
+        patch(
+            f"{AGENT}.hierarchy.plan_entity_stage",
+            return_value=StagePlan(ask_room=AskForRoom(domain="script", size=40)),
+        ),
+    ):
+        got, _ = await agent._ask("cancel the alarm", None, None)
+
+    assert got is response

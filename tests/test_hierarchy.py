@@ -101,6 +101,21 @@ def test_information_requests_never_need_it():
     assert not needs_entity_stage(response)
 
 
+def test_cancelling_a_named_kind_of_device_asks_for_the_entity():
+    """'Cancel the 8:30 alarm' must still learn which entity it names."""
+    cancel = _choice({"cancel": 0.8, "command": 0.2})
+    script = _choice({"script": 0.9, "none": 0.1})
+    response = _response(**{Q.Q_CATEGORY: cancel, Q.Q_TARGET_DOMAIN: script})
+    assert needs_entity_stage(response)
+
+
+def test_never_mind_never_needs_it():
+    cancel = _choice({"cancel": 0.9, "command": 0.1})
+    nothing = _choice({"none": 0.9, "light": 0.1})
+    response = _response(**{Q.Q_CATEGORY: cancel, Q.Q_TARGET_DOMAIN: nothing})
+    assert not needs_entity_stage(response)
+
+
 def test_a_home_that_fit_already_has_its_answer():
     entity = _choice({"light.bedside_lamp": 0.9, Q.NO_SINGLE_ENTITY: 0.1})
     assert not needs_entity_stage(_response(**{Q.Q_TARGET_ENTITY: entity}))

@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from . import questions as Q
-from .const import BEAM_WIDTH, MIN_MARGIN, T_SCOPE, T_SCOPE_WHOLE_HOUSE
+from .const import BEAM_WIDTH, MIN_MARGIN, T_DOMAIN, T_SCOPE, T_SCOPE_WHOLE_HOUSE
 from .entities import CatalogEntity
 from .system_one import ChoiceAnswer, SystemOneResponse
 
@@ -93,7 +93,12 @@ def needs_entity_stage(response: SystemOneResponse) -> bool:
     if response.choice(Q.Q_TARGET_ENTITY) is not None:
         return False
     category = response.choice(Q.Q_CATEGORY)
-    if category is None or category.choice not in _ENTITY_CATEGORIES:
+    if category is None:
+        return False
+    if category.choice == "cancel":
+        # "Cancel the 8:30 alarm" names a kind of device; "never mind" does not.
+        return names_a_domain(response)
+    if category.choice not in _ENTITY_CATEGORIES:
         return False
     scope = response.choice(Q.Q_SCOPE)
     if scope is None or scope.choice not in _GROUP_SCOPES:
@@ -102,6 +107,17 @@ def needs_entity_stage(response: SystemOneResponse) -> bool:
         scope.confidence >= _GROUP_SCOPES[scope.choice] and scope.margin >= MIN_MARGIN
     )
     return not solid
+
+
+def names_a_domain(response: SystemOneResponse) -> bool:
+    """Whether the request solidly names a kind of device."""
+    domain = response.choice(Q.Q_TARGET_DOMAIN)
+    return (
+        domain is not None
+        and domain.choice != Q.NO_DOMAIN
+        and domain.confidence >= T_DOMAIN
+        and domain.margin >= MIN_MARGIN
+    )
 
 
 def plan_entity_stage(
@@ -257,6 +273,7 @@ __all__ = [
     "StagePlan",
     "entity_stage_questions",
     "merge_entity_stage",
+    "names_a_domain",
     "needs_entity_stage",
     "plan_entity_stage",
 ]
