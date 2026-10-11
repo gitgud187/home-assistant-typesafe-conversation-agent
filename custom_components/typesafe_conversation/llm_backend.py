@@ -109,7 +109,7 @@ next from now. At 3:44 PM, "4:30" is 16:30:00. At 10 PM, "6" is 06:00:00. At \
 "4:30" is today at 16:30; at 10 PM, "6" is tomorrow at 06:00. Never give a moment \
 that has already passed unless the user asked for one.
 - A weekday is its next occurrence; today counts only while the time asked for is \
-still ahead. "Tomorrow morning" said between midnight and 5 AM is later today.
+still ahead.
 
 The user is in: {speaker_area}
 It is now {local_time}, {weekday}.
