@@ -56,6 +56,7 @@ from .const import (
 )
 from .entities import CatalogEntity
 from .extraction import COLOR_TEMP_PRESETS, Extraction
+from .hierarchy import names_a_domain
 from .system_one import ChoiceAnswer, SystemOneResponse
 
 
@@ -152,6 +153,18 @@ def _solid(answer: ChoiceAnswer | None, threshold: float) -> bool:
     )
 
 
+def _names_a_target(
+    response: SystemOneResponse, entities_by_id: dict[str, CatalogEntity]
+) -> bool:
+    """Whether the request solidly names one known entity."""
+    target = response.choice(Q.Q_TARGET_ENTITY)
+    return (
+        _solid(target, T_ENTITY)
+        and target.choice != Q.NO_SINGLE_ENTITY
+        and target.choice in entities_by_id
+    )
+
+
 _ONLY_ACTION: dict[str, str] = {"script": "run", "scene": "activate", "button": "press"}
 """Domains with a single possible action, which a solid target implies."""
 
@@ -181,13 +194,28 @@ def route(
         return Plan(Route.FALLBACK, reason="no category answer", trace=trace)
 
     # -- 0. the user is calling it off ---------------------------------------
-    if category.choice == "cancel" and category.confidence >= T_CATEGORY_CANCEL:
-        return Plan(Route.CANCEL, reason="category=cancel", trace=trace)
+    # "Cancel that" calls it off; "cancel the 8:30 alarm" names something to
+    # act on, and is routed from here on like any other command.
+    kind = category.choice
+    if kind == "cancel" and category.confidence >= T_CATEGORY_CANCEL:
+        if not _names_a_target(response, entities_by_id):
+            if names_a_domain(response):
+                # A kind of device was named but no one entity was settled on,
+                # as in a home too large to list it: let the fallback ladder
+                # try rather than dismissing the request in silence.
+                return Plan(
+                    Route.FALLBACK,
+                    reason="cancel names a device but no entity",
+                    trace=trace,
+                )
+            return Plan(Route.CANCEL, reason="category=cancel", trace=trace)
+        trace["cancel"] = "names a target: treated as a command"
+        kind = "command"
 
     # -- 1. more than one thing was asked for --------------------------------
     if (
         compound >= NOUL_COMPOUND_HIGH
-        and category.choice == "command"
+        and kind == "command"
         and category.confidence >= T_CATEGORY_COMPOUND
     ):
         return Plan(Route.COMPOUND, reason=f"compound={compound:.2f}", trace=trace)
@@ -200,18 +228,18 @@ def route(
         )
 
     # -- 2. nothing usable ----------------------------------------------------
-    if category.choice == "unclear" and category.confidence >= T_CATEGORY_UNCLEAR:
+    if kind == "unclear" and category.confidence >= T_CATEGORY_UNCLEAR:
         return Plan(Route.FALLBACK, reason="category=unclear", trace=trace)
 
     # -- 3. general knowledge -------------------------------------------------
-    if category.choice == "information" and _solid(category, T_CATEGORY_INFORMATION):
+    if kind == "information" and _solid(category, T_CATEGORY_INFORMATION):
         return Plan(Route.INFORMATION, reason="category=information", trace=trace)
 
     query_kind = response.choice(Q.Q_QUERY_KIND)
     trace["query_kind"] = _describe(query_kind)
 
     # -- 4. a question about the home ----------------------------------------
-    if category.choice == "query" and category.confidence >= T_CATEGORY_QUERY:
+    if kind == "query" and category.confidence >= T_CATEGORY_QUERY:
         kind = query_kind.choice if _solid(query_kind, T_QUERY_KIND) else "needs_prose"
         plan = _plan_query(
             response,
@@ -223,7 +251,7 @@ def route(
         return plan
 
     # -- 5. a command ---------------------------------------------------------
-    if category.choice == "command":
+    if kind == "command":
         return _plan_command(
             response,
             entities_by_id=entities_by_id,

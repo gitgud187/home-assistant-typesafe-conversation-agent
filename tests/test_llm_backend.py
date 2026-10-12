@@ -350,6 +350,18 @@ def test_the_answer_follows_the_users_language():
     assert "language the user spoke in" in ANSWER_SYSTEM_PROMPT
 
 
+def test_a_bare_time_is_the_next_one_to_come_round():
+    from custom_components.typesafe_conversation.llm_backend import (
+        FILL_SYSTEM_PROMPT,
+    )
+
+    assert "whichever of the two comes next from now" in FILL_SYSTEM_PROMPT
+    assert '"4:30" is 16:30:00' in FILL_SYSTEM_PROMPT
+    assert '"6" is 06:00:00' in FILL_SYSTEM_PROMPT
+    assert "the same rule sets the date" in FILL_SYSTEM_PROMPT
+    assert "A weekday is its next occurrence" in FILL_SYSTEM_PROMPT
+
+
 _SCHEMA = {"type": "object", "properties": {"alarm_time": {"type": "string"}}}
 
 

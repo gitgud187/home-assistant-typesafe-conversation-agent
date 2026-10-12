@@ -13,6 +13,7 @@ from homeassistant.components import conversation
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import intent
 from homeassistant.setup import async_setup_component
+from homeassistant.util import dt as dt_util
 
 from custom_components.typesafe_conversation import questions as Q
 from custom_components.typesafe_conversation.actions import spec_for
@@ -22,6 +23,7 @@ from custom_components.typesafe_conversation.router import Plan, Route, Target, 
 from custom_components.typesafe_conversation.script_fields import (
     ScriptField,
     async_script_fields,
+    clock,
     describe_values,
 )
 from custom_components.typesafe_conversation.system_one import (
@@ -145,6 +147,12 @@ async def test_values_are_checked_against_each_selector(hass: HomeAssistant):
 def test_values_are_said_in_plain_words():
     assert describe_values({"t": "05:15:00", "l": "upstairs"}) == "5:15 AM, upstairs"
     assert describe_values({"t": "17:05"}) == "5:05 PM"
+
+
+def test_a_clock_time_reads_in_twelve_hours():
+    assert clock("15:44") == "3:44 PM"
+    assert clock("00:30:00") == "12:30 AM"
+    assert clock("pack the bag") is None
 
 
 def test_a_field_without_a_selector_takes_text():
@@ -279,6 +287,23 @@ async def test_a_script_runs_with_the_values_the_model_filled(hass: HomeAssistan
 
     assert _speech(response) == "Alarm set for 05:15:00 upstairs."
     assert llm.fill_fields.await_args.kwargs["title"] == "Set an alarm"
+
+
+async def test_the_model_sees_the_time_in_both_forms(hass: HomeAssistant):
+    """A bare "4:30" said at 3:44 PM only resolves to 16:30 against the clock."""
+    await _scripts(hass)
+    llm = MagicMock()
+    llm.fill_fields = AsyncMock(
+        return_value={"alarm_time": "16:30:00", "location": "upstairs"}
+    )
+    now = dt_util.as_local(dt_util.parse_datetime("2026-10-10T19:44:00+00:00"))
+
+    with patch(f"{AGENT}.dt_util.now", return_value=now):
+        await _say(_agent(hass, llm, {}), "set an alarm for 4:30")
+
+    local_time = llm.fill_fields.await_args.kwargs["local_time"]
+    assert local_time == f"{now:%Y-%m-%d %H:%M} ({clock(f'{now:%H:%M}')})"
+    assert local_time.endswith("M)")
 
 
 async def test_a_missing_value_is_asked_for_then_used(hass: HomeAssistant):
@@ -665,3 +690,135 @@ def test_a_question_answered_by_a_script_runs_it(risky, kind, route_to):
     if route_to is Route.COMMAND:
         assert plan.action == "run"
         assert plan.target.entity.entity_id == "script.list_alarms"
+
+
+def _cancel_response(
+    target: str, p: float, compound: float = 0.02
+) -> SystemOneResponse:
+    return SystemOneResponse(
+        model="jev",
+        answers={
+            Q.Q_CATEGORY: _choice("cancel", 0.8, "command"),
+            Q.Q_COMPOUND: NoulAnswer(compound),
+            Q.Q_TARGET_ENTITY: _choice(target, p, Q.NO_SINGLE_ENTITY),
+            Q.Q_TARGET_DOMAIN: _choice("script", 0.8, Q.NO_DOMAIN),
+            Q.Q_TARGET_AREA: _choice(Q.NO_AREA, 0.9),
+            Q.Q_RISKY: NoulAnswer(0.02),
+            Q.Q_HERE_RELATIVE: NoulAnswer(0.1),
+        },
+        input_tokens=0,
+        output_tokens=0,
+        latency_ms=0,
+    )
+
+
+@pytest.mark.parametrize(
+    ("target", "p", "route_to"),
+    [
+        # "Cancel the 8:30 alarm" names the script to run, so it is a command.
+        ("script.cancel_alarm", 0.9, Route.COMMAND),
+        # A script was named but no entity settled on: never a silent cancel.
+        ("script.cancel_alarm", 0.4, Route.FALLBACK),
+        (Q.NO_SINGLE_ENTITY, 0.9, Route.FALLBACK),
+    ],
+)
+def test_cancelling_a_named_thing_is_a_command(target, p, route_to):
+    from custom_components.typesafe_conversation.extraction import extract
+
+    cancel = CatalogEntity(
+        entity_id="script.cancel_alarm",
+        name="Cancel an alarm",
+        aliases=(),
+        area_id=None,
+        area_name=None,
+        floor_name=None,
+        domain="script",
+        device_class=None,
+        supported_features=0,
+    )
+    plan = route(
+        _cancel_response(target, p),
+        entities_by_id={cancel.entity_id: cancel},
+        extraction=extract("cancel the 8:30 alarm", want_media=False, want_color=False),
+        speaker_area_id=None,
+        available_domains=frozenset({"script"}),
+    )
+    assert plan.route is route_to, plan.reason
+    if route_to is Route.COMMAND:
+        assert plan.action == "run"
+        assert plan.target.entity.entity_id == "script.cancel_alarm"
+
+
+def test_cancelling_a_named_thing_and_more_is_split():
+    """ "Cancel the 8:30 alarm and turn off the lights" is two commands."""
+    from custom_components.typesafe_conversation.extraction import extract
+
+    cancel = CatalogEntity(
+        entity_id="script.cancel_alarm",
+        name="Cancel an alarm",
+        aliases=(),
+        area_id=None,
+        area_name=None,
+        floor_name=None,
+        domain="script",
+        device_class=None,
+        supported_features=0,
+    )
+    plan = route(
+        _cancel_response("script.cancel_alarm", 0.9, compound=0.95),
+        entities_by_id={cancel.entity_id: cancel},
+        extraction=extract(
+            "cancel the 8:30 alarm and turn off the lights",
+            want_media=False,
+            want_color=False,
+        ),
+        speaker_area_id=None,
+        available_domains=frozenset({"script", "light"}),
+    )
+    assert plan.route is Route.COMPOUND, plan.reason
+
+
+async def test_a_cancel_is_never_answered_with_which_room(hass: HomeAssistant):
+    from custom_components.typesafe_conversation.hierarchy import (
+        AskForRoom,
+        StagePlan,
+    )
+
+    agent = TypeSafeAgent(
+        hass,
+        MagicMock(entities=(), areas=[]),
+        MagicMock(),
+        MagicMock(),
+        AgentSettings(),
+        traces=[],
+        pending_fills={},
+    )
+    response = _cancel_response(Q.NO_SINGLE_ENTITY, 0.9)
+    agent.jev.async_ask = AsyncMock(return_value=response)
+    agent._structural_questions = MagicMock(return_value={})
+    with (
+        patch(f"{AGENT}.build_request", return_value=({"request": {}}, {})),
+        patch(f"{AGENT}.hierarchy.needs_entity_stage", return_value=True),
+        patch(
+            f"{AGENT}.hierarchy.plan_entity_stage",
+            return_value=StagePlan(ask_room=AskForRoom(domain="script", size=40)),
+        ),
+    ):
+        got, _ = await agent._ask("cancel the alarm", None, None)
+
+    assert got is response
+
+
+def test_a_cancel_naming_nothing_stays_a_cancel():
+    from custom_components.typesafe_conversation.extraction import extract
+
+    response = _cancel_response(Q.NO_SINGLE_ENTITY, 0.9)
+    response.answers[Q.Q_TARGET_DOMAIN] = _choice(Q.NO_DOMAIN, 0.9, "script")
+    plan = route(
+        response,
+        entities_by_id={},
+        extraction=extract("never mind", want_media=False, want_color=False),
+        speaker_area_id=None,
+        available_domains=frozenset({"script"}),
+    )
+    assert plan.route is Route.CANCEL, plan.reason

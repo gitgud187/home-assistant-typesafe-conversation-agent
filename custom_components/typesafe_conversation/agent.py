@@ -46,6 +46,7 @@ from .script_fields import (
     ScriptField,
     ScriptFields,
     async_script_fields,
+    clock,
     script_service,
 )
 from .system_one import (
@@ -319,6 +320,10 @@ class TypeSafeAgent:
         plan = hierarchy.plan_entity_stage(response, entities, max_options=max_options)
         LOGGER.debug("Entity stage for %r: %s", text, plan.trace)
         if plan.ask_room is not None:
+            category = response.choice(Q.Q_CATEGORY)
+            if category is not None and category.choice == "cancel":
+                # Never answer a cancel with "which room?"; route() decides.
+                return response, entities
             raise _AskForRoom
         if plan.stage is None:
             return response, entities
@@ -780,7 +785,7 @@ class TypeSafeAgent:
                 description=fields.description,
                 schema=fields.json_schema([a.area_id for a in self.catalog.areas]),
                 speaker_area=self._speaker_area_name(user_input),
-                local_time=now.strftime("%Y-%m-%d %H:%M"),
+                local_time=f"{now:%Y-%m-%d %H:%M} ({clock(f'{now:%H:%M}')})",
                 weekday=now.strftime("%A"),
                 earlier=earlier,
                 known=known,

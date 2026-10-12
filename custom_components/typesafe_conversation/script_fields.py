@@ -203,7 +203,7 @@ def describe_values(values: dict[str, Any]) -> str:
 def _spoken_value(value: Any) -> str:
     if isinstance(value, bool):
         return "yes" if value else "no"
-    if isinstance(value, str) and (time := _clock(value)) is not None:
+    if isinstance(value, str) and (time := clock(value)) is not None:
         return time
     if isinstance(value, dict):
         return " ".join(f"{n} {unit}" for unit, n in value.items() if n)
@@ -212,7 +212,7 @@ def _spoken_value(value: Any) -> str:
     return str(value)
 
 
-def _clock(value: str) -> str | None:
+def clock(value: str) -> str | None:
     """'05:15:00' as '5:15 AM'; anything that is not a clock time, None."""
     parts = value.split(":")
     if len(parts) not in (2, 3) or not all(p.isdigit() for p in parts):

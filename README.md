@@ -292,11 +292,17 @@ script:
 ```
 
 "Wake me up at 5.15 tomorrow" from a bedroom satellite runs it with
-`alarm_time: 05:15:00` and the bedroom's speaker. If the script returns a
-`speech` or `message` string, that is what is said; otherwise the reply names
-the values it used. Most selectors work, including `select`, `number`,
+`alarm_time: 05:15:00` and the bedroom's speaker. A time said without AM/PM is
+the next one to come round, so "4:30" said in the afternoon is 4:30 PM. If the
+script returns a `speech`, `message`, `result`, `response` or `text` string,
+that is what is said; otherwise the reply names the values it used. Most selectors work, including `select`, `number`,
 `boolean`, `time`, `date`, `duration`, `area` and `text`. Hidden (advanced)
 fields are left out.
+
+A script that finds something by its time, such as cancelling the 4:30 alarm,
+works best if it also accepts the time twelve hours away when nothing matches
+exactly: the language model can't see which alarms exist, so "4:30" said in the
+afternoon reaches the script as 16:30 even when the alarm is at 4:30 AM.
 
 ### Leave "prefer handling commands locally" on
 
