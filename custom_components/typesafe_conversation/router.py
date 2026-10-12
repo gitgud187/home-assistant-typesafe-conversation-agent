@@ -56,6 +56,7 @@ from .const import (
 )
 from .entities import CatalogEntity
 from .extraction import COLOR_TEMP_PRESETS, Extraction
+from .hierarchy import names_a_domain
 from .system_one import ChoiceAnswer, SystemOneResponse
 
 
@@ -198,6 +199,15 @@ def route(
     kind = category.choice
     if kind == "cancel" and category.confidence >= T_CATEGORY_CANCEL:
         if not _names_a_target(response, entities_by_id):
+            if names_a_domain(response):
+                # A kind of device was named but no one entity was settled on,
+                # as in a home too large to list it: let the fallback ladder
+                # try rather than dismissing the request in silence.
+                return Plan(
+                    Route.FALLBACK,
+                    reason="cancel names a device but no entity",
+                    trace=trace,
+                )
             return Plan(Route.CANCEL, reason="category=cancel", trace=trace)
         trace["cancel"] = "names a target: treated as a command"
         kind = "command"

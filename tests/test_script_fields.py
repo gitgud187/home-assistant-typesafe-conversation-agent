@@ -717,8 +717,9 @@ def _cancel_response(
     [
         # "Cancel the 8:30 alarm" names the script to run, so it is a command.
         ("script.cancel_alarm", 0.9, Route.COMMAND),
-        ("script.cancel_alarm", 0.4, Route.CANCEL),
-        (Q.NO_SINGLE_ENTITY, 0.9, Route.CANCEL),
+        # A script was named but no entity settled on: never a silent cancel.
+        ("script.cancel_alarm", 0.4, Route.FALLBACK),
+        (Q.NO_SINGLE_ENTITY, 0.9, Route.FALLBACK),
     ],
 )
 def test_cancelling_a_named_thing_is_a_command(target, p, route_to):
@@ -806,3 +807,18 @@ async def test_a_cancel_is_never_answered_with_which_room(hass: HomeAssistant):
         got, _ = await agent._ask("cancel the alarm", None, None)
 
     assert got is response
+
+
+def test_a_cancel_naming_nothing_stays_a_cancel():
+    from custom_components.typesafe_conversation.extraction import extract
+
+    response = _cancel_response(Q.NO_SINGLE_ENTITY, 0.9)
+    response.answers[Q.Q_TARGET_DOMAIN] = _choice(Q.NO_DOMAIN, 0.9, "script")
+    plan = route(
+        response,
+        entities_by_id={},
+        extraction=extract("never mind", want_media=False, want_color=False),
+        speaker_area_id=None,
+        available_domains=frozenset({"script"}),
+    )
+    assert plan.route is Route.CANCEL, plan.reason

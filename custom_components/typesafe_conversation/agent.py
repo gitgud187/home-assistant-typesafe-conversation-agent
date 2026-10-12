@@ -322,7 +322,7 @@ class TypeSafeAgent:
         if plan.ask_room is not None:
             category = response.choice(Q.Q_CATEGORY)
             if category is not None and category.choice == "cancel":
-                # Never answer a cancel with "which room?"; it stays a cancel.
+                # Never answer a cancel with "which room?"; route() decides.
                 return response, entities
             raise _AskForRoom
         if plan.stage is None:
