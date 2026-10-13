@@ -20,7 +20,11 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.typesafe_conversation.actions import spec_for
 from custom_components.typesafe_conversation.entities import EntityCatalog
-from custom_components.typesafe_conversation.executor import async_execute, build_slots
+from custom_components.typesafe_conversation.executor import (
+    async_execute,
+    async_execute_query,
+    build_slots,
+)
 from custom_components.typesafe_conversation.router import Plan, Route, Target
 
 
@@ -411,6 +415,70 @@ async def test_a_query_against_an_unavailable_entity_still_runs(
     )
     response = await async_execute_query(hass, plan, _input(hass))
     assert response.response_type is not intent.IntentResponseType.ERROR
+
+
+async def test_a_state_query_says_what_it_found(hass: HomeAssistant):
+    """Home Assistant's state intent fills in states and speaks nothing.
+
+    The pipeline skips text to speech for a reply with no speech, so a correct
+    answer was never heard.
+    """
+    await _setup(hass)
+    assert await async_setup_component(hass, "binary_sensor", {})
+    registry = er.async_get(hass)
+    entry = registry.async_get_or_create("binary_sensor", "demo", "win")
+    hass.states.async_set(
+        entry.entity_id,
+        "off",
+        {"friendly_name": "Hall Window", "device_class": "window"},
+    )
+    _expose(hass, entry.entity_id)
+
+    catalog = EntityCatalog(hass, conversation.DOMAIN)
+    entity = next(e for e in catalog.entities if e.entity_id == entry.entity_id)
+    plan = Plan(
+        Route.QUERY,
+        query_kind="device_state",
+        target=Target(entity=entity, domain="binary_sensor"),
+    )
+
+    response = await async_execute_query(hass, plan, _input(hass))
+
+    assert response.response_type is intent.IntentResponseType.QUERY_ANSWER
+    speech = response.speech["plain"]["speech"]
+    assert "hall window" in speech.lower()
+    assert "closed" in speech.lower()
+
+
+async def test_a_state_query_keeps_the_unit_of_a_reading(hass: HomeAssistant):
+    """A number is spoken as the stock sentence says it, unit included."""
+    await _setup(hass)
+    registry = er.async_get(hass)
+    entry = registry.async_get_or_create("sensor", "demo", "temp")
+    hass.states.async_set(
+        entry.entity_id,
+        "21.5",
+        {
+            "friendly_name": "Hall Temperature",
+            "device_class": "temperature",
+            "unit_of_measurement": "\u00b0C",
+        },
+    )
+    _expose(hass, entry.entity_id)
+
+    catalog = EntityCatalog(hass, conversation.DOMAIN)
+    entity = next(e for e in catalog.entities if e.entity_id == entry.entity_id)
+    plan = Plan(
+        Route.QUERY,
+        query_kind="device_state",
+        target=Target(entity=entity, domain="sensor"),
+    )
+
+    response = await async_execute_query(hass, plan, _input(hass))
+
+    speech = response.speech["plain"]["speech"]
+    assert "21.5" in speech
+    assert "\u00b0C" in speech
 
 
 # --- relative changes start from what the devices report ----------------------

@@ -14,6 +14,7 @@ import math
 from dataclasses import replace
 from typing import Any
 
+from home_assistant_intents import get_intents
 from homeassistant.components import conversation
 from homeassistant.components.homeassistant import async_should_expose
 from homeassistant.const import (
@@ -22,9 +23,10 @@ from homeassistant.const import (
     STATE_UNKNOWN,
     UnitOfTemperature,
 )
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import intent
+from homeassistant.core import HomeAssistant, State
+from homeassistant.exceptions import HomeAssistantError, TemplateError
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import intent, template, translation
 
 from .actions import (
     ACTION_VERBS,
@@ -457,7 +459,98 @@ async def async_execute_query(
         slots["domain"] = _slot([plan.target.domain])
     if not slots:
         raise ExecutionError("Not enough to look up", code="no_valid_targets")
-    return await _handle(hass, INTENT_GET_STATE, slots, user_input)
+    response = await _handle(hass, INTENT_GET_STATE, slots, user_input)
+    await _speak_state_answer(hass, response, user_input.language)
+    return response
+
+
+async def _state_answer_template(
+    hass: HomeAssistant, language: str | None
+) -> str | None:
+    """The per-device sentence Home Assistant's own matcher uses for a state query."""
+    language = language or hass.config.language
+    for code in dict.fromkeys((language, language.split("-")[0], "en")):
+        data = await hass.async_add_executor_job(get_intents, code)
+        if data is not None:
+            templates = data.get("responses", {}).get("intents", {})
+            return templates.get(INTENT_GET_STATE, {}).get("one")
+    return None
+
+
+class _SpokenState(template.TemplateState):
+    """A state that reads as the word a person would say for it.
+
+    The stock sentence prints the raw state, so a closed window is "off". The
+    frontend shows "Closed", and so should the voice.
+    """
+
+    __slots__ = ("_word",)
+
+    def __init__(self, hass: HomeAssistant, state: State, word: str | None) -> None:
+        super().__init__(hass, state)
+        self._word = word
+
+    @property
+    def state_with_unit(self) -> str:
+        return self._word or super().state_with_unit
+
+
+async def _state_word(hass: HomeAssistant, state: State) -> str | None:
+    """The translated state, or None where the raw one is already what to say."""
+    if state.attributes.get("unit_of_measurement"):
+        return None
+    await translation.async_get_translations(
+        hass, hass.config.language, "entity_component", [state.domain]
+    )
+    entry = er.async_get(hass).async_get(state.entity_id)
+    word = translation.async_translate_state(
+        hass,
+        state.state,
+        state.domain,
+        entry.platform if entry else None,
+        entry.translation_key if entry else None,
+        state.attributes.get("device_class"),
+    )
+    return word if word != state.state else None
+
+
+async def _speak_state_answer(
+    hass: HomeAssistant, response: intent.IntentResponse, language: str | None
+) -> None:
+    """Say what a state query found.
+
+    ``HassGetState`` records the matched states and speaks nothing. The default
+    agent writes the sentence from a response template, but only for sentences it
+    matched itself, so a query routed here by the model would be answered without a
+    word and the pipeline would skip text to speech. This renders the same
+    per-device template for each state, in the pipeline's language.
+    """
+    if response.response_type is not intent.IntentResponseType.QUERY_ANSWER:
+        return
+    if response.speech or not response.matched_states:
+        return
+    source = await _state_answer_template(hass, language)
+    if source is None:
+        return
+    answer = template.Template(source, hass)
+    sentences = []
+    for state in response.matched_states:
+        try:
+            rendered = answer.async_render(
+                {
+                    "slots": {"name": state.name},
+                    "state": _SpokenState(hass, state, await _state_word(hass, state)),
+                    "query": {"matched": [], "unmatched": []},
+                },
+                parse_result=False,
+            )
+        except TemplateError as err:
+            LOGGER.debug("State answer did not render for %s: %s", state.entity_id, err)
+            return
+        if sentence := " ".join(str(rendered).split()):
+            sentences.append(sentence)
+    if sentences:
+        response.async_set_speech(", ".join(sentences))
 
 
 async def async_execute_cancel(
