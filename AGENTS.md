@@ -98,5 +98,12 @@ Ruff enforces style and complexity. These are what it can't:
 ## Git
 
 This checkout is a fork (`origin`) of `the-sof/home-assistant-typesafe-conversation-agent`
-(`upstream`). One concern per branch. Do not push to or open PRs against
-`upstream` without the owner's go-ahead.
+(`upstream`), maintained as its own project. One concern per branch.
+
+- `main` carries our changes. Releases are tags cut from it, starting at `0.5.0`
+  (upstream is 0.4.x, so the numbers never collide). Bump
+  `custom_components/typesafe_conversation/manifest.json` in the same commit as the
+  change that earns the version.
+- Keep the domain `typesafe_conversation` so an install replaces upstream in place.
+- Pulling from `upstream` is fine; review what changed before merging it.
+- Nothing goes back: no pushes, issues, PRs or comments on `the-sof/...`.
