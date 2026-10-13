@@ -433,6 +433,93 @@ async def _execute_whole_house(
     return response
 
 
+async def _execute_temperature(
+    hass: HomeAssistant, plan: Plan, user_input: conversation.ConversationInput
+) -> intent.IntentResponse:
+    """Answer "what is the temperature" from a sensor or a thermostat.
+
+    ``HassClimateGetTemperature`` matches climate entities and nothing else. The model
+    usually, and rightly, names a temperature *sensor* for a room, and that intent then
+    found nothing, so the question fell through to the language model. Climate
+    entities keep their own intent; a sensor, or an area with no thermostat, is read
+    with the state query, which also speaks the unit.
+    """
+    entity = plan.target.entity
+    if entity is not None and entity.domain != "climate":
+        return await _read_state(
+            hass,
+            {"name": _slot(entity.entity_id, entity.name)},
+            user_input,
+        )
+
+    slots: dict[str, Any] = {}
+    if plan.target.area_id:
+        slots["area"] = _slot(plan.target.area_id)
+    if entity is not None:
+        slots["name"] = _slot(entity.entity_id, entity.name)
+    try:
+        response = await _handle(
+            hass, INTENT_CLIMATE_GET_TEMPERATURE, slots, user_input
+        )
+    except intent.MatchFailedError:
+        if entity is not None or not plan.target.area_id:
+            raise
+    else:
+        await _speak_temperature_answer(hass, response, user_input.language)
+        return response
+    # No thermostat in that area: read its temperature sensors instead.
+    return await _read_state(
+        hass,
+        {
+            "area": _slot(plan.target.area_id),
+            "domain": _slot(["sensor"]),
+            "device_class": _slot(["temperature"]),
+        },
+        user_input,
+    )
+
+
+async def _speak_temperature_answer(
+    hass: HomeAssistant, response: intent.IntentResponse, language: str | None
+) -> None:
+    """Say a thermostat's temperature, as the default agent would.
+
+    ``HassClimateGetTemperature`` leaves the sentence to a response template that only
+    runs for sentences the default agent matched itself, so the answer was silent.
+    """
+    if response.response_type is not intent.IntentResponseType.QUERY_ANSWER:
+        return
+    if response.speech or not response.matched_states:
+        return
+    source = await _response_template(
+        hass, language, INTENT_CLIMATE_GET_TEMPERATURE, "default"
+    )
+    if source is None:
+        return
+    state = response.matched_states[0]
+    try:
+        rendered = template.Template(source, hass).async_render(
+            {"state": template.TemplateState(hass, state)}, parse_result=False
+        )
+    except TemplateError as err:
+        LOGGER.debug(
+            "Temperature answer did not render for %s: %s", state.entity_id, err
+        )
+        return
+    if sentence := " ".join(str(rendered).split()):
+        response.async_set_speech(sentence)
+
+
+async def _read_state(
+    hass: HomeAssistant,
+    slots: dict[str, Any],
+    user_input: conversation.ConversationInput,
+) -> intent.IntentResponse:
+    response = await _handle(hass, INTENT_GET_STATE, slots, user_input)
+    await _speak_state_answer(hass, response, user_input.language)
+    return response
+
+
 async def async_execute_query(
     hass: HomeAssistant,
     plan: Plan,
@@ -443,12 +530,7 @@ async def async_execute_query(
     if kind == "time_or_date":
         return await _handle(hass, INTENT_GET_CURRENT_TIME, {}, user_input)
     if kind == "temperature":
-        slots: dict[str, Any] = {}
-        if plan.target.area_id:
-            slots["area"] = _slot(plan.target.area_id)
-        if plan.target.entity is not None:
-            slots["name"] = _slot(plan.target.entity.entity_id, plan.target.entity.name)
-        return await _handle(hass, INTENT_CLIMATE_GET_TEMPERATURE, slots, user_input)
+        return await _execute_temperature(hass, plan, user_input)
 
     slots = {}
     if plan.target.entity is not None:
@@ -464,16 +546,16 @@ async def async_execute_query(
     return response
 
 
-async def _state_answer_template(
-    hass: HomeAssistant, language: str | None
+async def _response_template(
+    hass: HomeAssistant, language: str | None, intent_name: str, key: str
 ) -> str | None:
-    """The per-device sentence Home Assistant's own matcher uses for a state query."""
+    """A response sentence template from Home Assistant's own intents, by language."""
     language = language or hass.config.language
     for code in dict.fromkeys((language, language.split("-")[0], "en")):
         data = await hass.async_add_executor_job(get_intents, code)
         if data is not None:
             templates = data.get("responses", {}).get("intents", {})
-            return templates.get(INTENT_GET_STATE, {}).get("one")
+            return templates.get(intent_name, {}).get(key)
     return None
 
 
@@ -529,7 +611,7 @@ async def _speak_state_answer(
         return
     if response.speech or not response.matched_states:
         return
-    source = await _state_answer_template(hass, language)
+    source = await _response_template(hass, language, INTENT_GET_STATE, "one")
     if source is None:
         return
     answer = template.Template(source, hass)

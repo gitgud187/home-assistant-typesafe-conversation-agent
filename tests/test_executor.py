@@ -742,3 +742,103 @@ def test_everything_and_a_named_entity_are_unchanged():
     )
 
     assert _spoken(everything) == "Turned off everything."
+
+
+# --- temperature questions -------------------------------------------------------
+
+
+def _temperature_plan(entity=None, *, area_id=None):
+    return Plan(
+        Route.QUERY,
+        query_kind="temperature",
+        target=Target(entity=entity, area_id=area_id, domain="sensor"),
+    )
+
+
+async def _expose_temperature_sensor(hass: HomeAssistant, area: str | None = None):
+    await _setup(hass)
+    registry = er.async_get(hass)
+    entry = registry.async_get_or_create("sensor", "demo", "temp")
+    if area is not None:
+        areas = ar.async_get(hass)
+        registry.async_update_entity(
+            entry.entity_id, area_id=areas.async_create(area).id
+        )
+    hass.states.async_set(
+        entry.entity_id,
+        "21.4",
+        {
+            "friendly_name": "Hall Temperature",
+            "device_class": "temperature",
+            "unit_of_measurement": "°C",
+        },
+    )
+    _expose(hass, entry.entity_id)
+    catalog = EntityCatalog(hass, conversation.DOMAIN)
+    return next(e for e in catalog.entities if e.entity_id == entry.entity_id)
+
+
+async def test_a_temperature_sensor_is_read_not_sent_to_the_climate_intent(
+    hass: HomeAssistant,
+):
+    """HassClimateGetTemperature matches climate entities only.
+
+    The model rightly names a temperature sensor for "temperature in the living
+    room"; the climate intent then found nothing and the question fell through to the
+    language model, which answered in its own words and, in a conversation with
+    history, repeated the previous answer too.
+    """
+    entity = await _expose_temperature_sensor(hass)
+
+    response = await async_execute_query(hass, _temperature_plan(entity), _input(hass))
+
+    assert response.response_type is intent.IntentResponseType.QUERY_ANSWER
+    speech = response.speech["plain"]["speech"]
+    assert "21.4" in speech
+    assert "°C" in speech
+
+
+async def test_a_temperature_asked_by_area_reads_the_sensor_when_there_is_no_climate(
+    hass: HomeAssistant,
+):
+    await _expose_temperature_sensor(hass, area="Hall")
+
+    response = await async_execute_query(
+        hass, _temperature_plan(area_id="hall"), _input(hass)
+    )
+
+    assert response.response_type is intent.IntentResponseType.QUERY_ANSWER
+    assert "21.4" in response.speech["plain"]["speech"]
+
+
+async def test_a_thermostat_question_is_still_answered_by_the_climate_intent(
+    hass: HomeAssistant,
+):
+    await _setup(hass)
+    assert await async_setup_component(hass, "climate", {})
+    registry = er.async_get(hass)
+    entry = registry.async_get_or_create("climate", "demo", "heat")
+    hass.states.async_set(
+        entry.entity_id,
+        "heat",
+        {
+            "friendly_name": "Hall Thermostat",
+            "current_temperature": 19.5,
+            "temperature": 21.0,
+            "supported_features": 1,
+        },
+    )
+    _expose(hass, entry.entity_id)
+    catalog = EntityCatalog(hass, conversation.DOMAIN)
+    entity = next(e for e in catalog.entities if e.entity_id == entry.entity_id)
+    plan = Plan(
+        Route.QUERY,
+        query_kind="temperature",
+        target=Target(entity=entity, domain="climate"),
+    )
+
+    response = await async_execute_query(hass, plan, _input(hass))
+
+    assert response.response_type is intent.IntentResponseType.QUERY_ANSWER
+    assert response.matched_states, "the thermostat was found"
+    assert "19.5" in response.speech["plain"]["speech"], "and it is not left silent"
