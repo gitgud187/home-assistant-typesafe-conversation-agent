@@ -39,6 +39,8 @@ from .const import (
     PROBE_TIMEOUT,
     SYSTEM_ONE_PATH,
     TIMEOUT_MARGIN,
+    WARM_UP_MIN_GAP,
+    WARM_UP_TIMEOUT,
 )
 
 _REJECTED = frozenset({400, 413, 422})
@@ -313,6 +315,7 @@ class SystemOneClient:
         self.profile = profile or ServerProfile()
         self._consecutive_failures = 0
         self._open_until = 0.0
+        self._last_warm_up = -WARM_UP_MIN_GAP
 
     @property
     def model(self) -> str:
@@ -495,6 +498,27 @@ class SystemOneClient:
             raise SystemOneUnavailableError(
                 f"No answer within {PROBE_TIMEOUT:.0f}s"
             ) from err
+
+    async def async_warm_up(self) -> bool:
+        """Send the smallest real request so the model is awake for the next one.
+
+        Measured in docs/experiments/2026-10-13-connection-warmup.md: a real call
+        after 40 s idle took a median 542 ms, and 334 ms when a request like this
+        had been sent about 1.5 s earlier. It carries no user data, is skipped
+        inside ``WARM_UP_MIN_GAP`` of the last one, and while the circuit is open.
+        It never raises and never counts toward the circuit breaker, so a failure
+        here cannot slow a real command. Returns whether a request was sent.
+        """
+        now = time.monotonic()
+        if self.circuit_open or now - self._last_warm_up < WARM_UP_MIN_GAP:
+            return False
+        self._last_warm_up = now
+        try:
+            async with asyncio.timeout(WARM_UP_TIMEOUT):
+                await self._probe(3)
+        except (SystemOneError, TimeoutError) as err:
+            LOGGER.debug("Warm-up request failed: %s", err)
+        return True
 
     async def _show(self, model: str) -> dict[str, Any] | None:
         """Ollama's model metadata, or None from any server that lacks it."""

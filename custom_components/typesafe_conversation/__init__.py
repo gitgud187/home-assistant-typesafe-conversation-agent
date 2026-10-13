@@ -15,23 +15,36 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import (
+    CALLBACK_TYPE,
+    Event,
+    EventStateChangedData,
+    HomeAssistant,
+    callback,
+)
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.event import (
+    TrackStates,
+    async_track_state_change_filtered,
+    async_track_time_interval,
+)
 
 from .const import (
+    ASSIST_SATELLITE_DOMAIN,
     CONF_API_KEY,
     CONF_API_TIMEOUT,
     CONF_BASE_URL,
     CONF_LLM_KEEP_LOADED,
     CONF_MODEL,
     CONF_SERVER_PROFILE,
+    CONF_WARM_UP,
     CONVERSATION_DOMAIN,
     DEFAULT_MODEL,
     DOMAIN,
     LLM_WARMUP_INTERVAL_SECONDS,
+    SATELLITE_LISTENING,
     TRACE_HISTORY,
 )
 from .entities import EntityCatalog
@@ -134,9 +147,43 @@ async def async_setup_entry(hass: HomeAssistant, entry: TypeSafeConfigEntry) -> 
             )
         )
 
+    if entry.data.get(CONF_WARM_UP):
+        entry.async_on_unload(_async_warm_up_on_listening(hass, entry, client))
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
+
+
+def _async_warm_up_on_listening(
+    hass: HomeAssistant, entry: TypeSafeConfigEntry, client: SystemOneClient
+) -> CALLBACK_TYPE:
+    """Warm the model the moment any Assist satellite starts listening.
+
+    A satellite reaches ``listening`` when it begins streaming a command, a few
+    seconds before the sentence is transcribed and this agent is asked. That is the
+    window a tiny request needs. Home Assistant documents the state as an automation
+    trigger ("Triggers after one or more Assist satellites start listening"), and the
+    whole domain is tracked so no device is named here. A phone or dashboard
+    microphone is not a satellite and is not covered.
+    """
+
+    @callback
+    def _changed(event: Event[EventStateChangedData]) -> None:
+        new = event.data["new_state"]
+        old = event.data["old_state"]
+        if new is None or new.state != SATELLITE_LISTENING:
+            return
+        if old is not None and old.state == SATELLITE_LISTENING:
+            return
+        entry.async_create_background_task(
+            hass, client.async_warm_up(), "typesafe_warm_up"
+        )
+
+    tracker = async_track_state_change_filtered(
+        hass, TrackStates(False, set(), {ASSIST_SATELLITE_DOMAIN}), _changed
+    )
+    return tracker.async_remove
 
 
 def _profile(entry: ConfigEntry) -> ServerProfile:

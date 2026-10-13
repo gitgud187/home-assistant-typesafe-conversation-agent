@@ -34,6 +34,11 @@ TYPESAFE_CONSOLE_URL: Final = "https://console.typesafe.ai/"
 DEFAULT_MODEL: Final = "jev-latest"
 """Jev is the only System One model today. An alias, so it follows releases."""
 API_TIMEOUT: Final = 6.0
+WARM_UP_MIN_GAP: Final = 20.0
+"""Seconds between warm-up requests. A false wake word, or a satellite that flaps
+between states, can only cost one tiny request in this window."""
+WARM_UP_TIMEOUT: Final = 10.0
+"""Give up on a warm-up that has not answered by now; nothing waits for it."""
 API_MAX_RETRIES: Final = 3
 API_BACKOFF: Final = (0.25, 0.75, 2.0)
 
@@ -76,6 +81,14 @@ CONF_INLINE_ENTITY_DESCRIPTIONS: Final = "inline_entity_descriptions"
 CONF_ALWAYS_CONFIRM_RISKY: Final = "always_confirm_risky"
 CONF_LLM_TIMEOUT: Final = "llm_timeout"
 CONF_LLM_KEEP_LOADED: Final = "llm_keep_loaded"
+CONF_WARM_UP: Final = "warm_up_on_listening"
+
+# Named here, not imported from the assist_satellite component, so this integration
+# does not depend on that component's own requirements. Both are documented: the
+# domain is the entity platform, and "listening" is the state Home Assistant's docs
+# offer as an automation trigger ("start listening for a voice command").
+ASSIST_SATELLITE_DOMAIN: Final = "assist_satellite"
+SATELLITE_LISTENING: Final = "listening"
 
 DEFAULT_ALWAYS_CONFIRM_RISKY: Final = True
 """Ask before unlocking or opening the house, however sure the model is.

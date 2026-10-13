@@ -49,6 +49,7 @@ from .const import (
     CONF_LLM_TIMEOUT,
     CONF_MODEL,
     CONF_SERVER_PROFILE,
+    CONF_WARM_UP,
     CONVERSATION_DOMAIN,
     DEFAULT_ALWAYS_CONFIRM_RISKY,
     DEFAULT_BASE_URL,
@@ -98,6 +99,9 @@ def _endpoint_schema(defaults: dict[str, Any], *, timeout: bool = False) -> vol.
             NumberSelector(
                 NumberSelectorConfig(min=2, max=600, step=1, unit_of_measurement="s")
             )
+        )
+        fields[vol.Optional(CONF_WARM_UP, default=bool(defaults.get(CONF_WARM_UP)))] = (
+            BooleanSelector()
         )
     return vol.Schema(fields)
 

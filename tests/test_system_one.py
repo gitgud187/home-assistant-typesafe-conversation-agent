@@ -443,3 +443,46 @@ def test_a_malformed_address_is_caught(url, valid):
     from custom_components.typesafe_conversation.system_one import valid_url
 
     assert valid_url(url) is valid
+
+
+# --- warming the model before a real request ------------------------------------
+
+
+async def test_a_warm_up_sends_one_tiny_request_and_not_two_close_together(
+    client, mocker
+):
+    mocker.post(TYPESAFE_API_URL, json=OK)
+
+    assert await client.async_warm_up() is True
+    assert await client.async_warm_up() is False, "inside the minimum gap"
+
+    assert len(mocker.mock_calls) == 1
+    _method, _url, body, _headers = mocker.mock_calls[0]
+    assert body["state"] == "x", "no user data goes with it"
+    assert len(body["questions"]["probe"]["criteria"]) == 3
+
+
+async def test_a_failed_warm_up_neither_raises_nor_trips_the_breaker(client, mocker):
+    mocker.post(TYPESAFE_API_URL, status=500, text="down")
+
+    assert await client.async_warm_up() is True
+
+    assert client.circuit_open is False
+
+
+async def test_a_warm_up_that_cannot_connect_is_swallowed(client, mocker):
+    import aiohttp
+
+    mocker.post(TYPESAFE_API_URL, exc=aiohttp.ClientError("unreachable"))
+
+    assert await client.async_warm_up() is True
+    assert client._consecutive_failures == 0
+
+
+async def test_no_warm_up_is_sent_while_the_circuit_is_open(client, mocker):
+    mocker.post(TYPESAFE_API_URL, json=OK)
+    client._open_until = float("inf")
+
+    assert await client.async_warm_up() is False
+
+    assert not mocker.mock_calls

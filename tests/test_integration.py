@@ -35,6 +35,7 @@ from custom_components.typesafe_conversation.const import (
     CONF_BASE_URL,
     CONF_MODEL,
     CONF_SERVER_PROFILE,
+    CONF_WARM_UP,
     DOMAIN,
     TYPESAFE_API_URL,
     TYPESAFE_MODELS_URL,
@@ -163,6 +164,74 @@ async def test_a_device_the_home_does_not_have_is_reported_and_nothing_runs(
     assert result.response.error_code == intent.IntentResponseErrorCode.NO_VALID_TARGETS
     assert "couldn't find" in result.response.speech["plain"]["speech"]
     assert not calls
+
+
+def _warm_ups(mocker: AiohttpClientMocker) -> int:
+    return sum(1 for method, url, *_ in mocker.mock_calls if method == "POST")
+
+
+async def test_warming_is_off_unless_asked_for(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+):
+    await _setup_home(hass)
+    await _add_entry(hass, aioclient_mock)
+    aioclient_mock.post(TYPESAFE_API_URL, json=_recorded("get_the_coffee_boiling"))
+
+    hass.states.async_set("assist_satellite.kitchen", "idle")
+    hass.states.async_set("assist_satellite.kitchen", "listening")
+    await hass.async_block_till_done()
+
+    assert _warm_ups(aioclient_mock) == 0
+
+
+async def test_a_satellite_starting_to_listen_warms_the_model_once(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+):
+    await _setup_home(hass)
+    await _add_entry(hass, aioclient_mock, **{CONF_WARM_UP: True})
+    aioclient_mock.post(TYPESAFE_API_URL, json=_recorded("get_the_coffee_boiling"))
+
+    hass.states.async_set("assist_satellite.kitchen", "idle")
+    hass.states.async_set("assist_satellite.kitchen", "listening")
+    await hass.async_block_till_done()
+    assert _warm_ups(aioclient_mock) == 1
+
+    # Listening again at once, as a flapping satellite would: no second request.
+    hass.states.async_set("assist_satellite.kitchen", "idle")
+    hass.states.async_set("assist_satellite.kitchen", "listening")
+    await hass.async_block_till_done()
+    assert _warm_ups(aioclient_mock) == 1
+
+
+async def test_only_listening_on_a_satellite_triggers_a_warm_up(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+):
+    await _setup_home(hass)
+    await _add_entry(hass, aioclient_mock, **{CONF_WARM_UP: True})
+    aioclient_mock.post(TYPESAFE_API_URL, json=_recorded("get_the_coffee_boiling"))
+
+    hass.states.async_set("assist_satellite.kitchen", "idle")
+    hass.states.async_set("assist_satellite.kitchen", "processing")
+    hass.states.async_set("assist_satellite.kitchen", "responding")
+    hass.states.async_set("sensor.not_a_satellite", "listening")
+    await hass.async_block_till_done()
+
+    assert _warm_ups(aioclient_mock) == 0
+
+
+async def test_unloading_stops_the_warm_up_listener(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+):
+    await _setup_home(hass)
+    entry = await _add_entry(hass, aioclient_mock, **{CONF_WARM_UP: True})
+    aioclient_mock.post(TYPESAFE_API_URL, json=_recorded("get_the_coffee_boiling"))
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    hass.states.async_set("assist_satellite.kitchen", "idle")
+    hass.states.async_set("assist_satellite.kitchen", "listening")
+    await hass.async_block_till_done()
+
+    assert _warm_ups(aioclient_mock) == 0
 
 
 async def test_an_empty_utterance_spends_no_request(
@@ -1179,3 +1248,15 @@ async def test_a_malformed_server_address_is_a_form_error(
         result["flow_id"], {CONF_BASE_URL: "http://[::1:11434", CONF_API_KEY: "k"}
     )
     assert result["errors"] == {"base": "invalid_url"}
+
+
+def test_the_warm_up_switch_is_on_the_reconfigure_form_and_off_by_default():
+    from custom_components.typesafe_conversation.config_flow import _endpoint_schema
+
+    first_setup = _endpoint_schema({})
+    reconfigure = _endpoint_schema({"api_timeout": 6.0}, timeout=True)
+
+    assert CONF_WARM_UP not in {str(k) for k in first_setup.schema}
+    keys = {str(k): k for k in reconfigure.schema}
+    assert CONF_WARM_UP in keys
+    assert keys[CONF_WARM_UP].default() is False

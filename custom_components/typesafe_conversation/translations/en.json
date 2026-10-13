@@ -39,11 +39,13 @@
         "data": {
           "base_url": "Server URL",
           "api_key": "API key",
-          "api_timeout": "Request timeout"
+          "api_timeout": "Request timeout",
+          "warm_up_on_listening": "Warm up the model when a satellite starts listening"
         },
         "data_description": {
           "api_key": "Leave blank for a server that doesn't check one.",
-          "api_timeout": "How long to wait for an answer. Set from the measured cold-load time; raise it for a slow local model."
+          "api_timeout": "How long to wait for an answer. Set from the measured cold-load time; raise it for a slow local model.",
+          "warm_up_on_listening": "Off by default. When a voice satellite starts listening, send the server one tiny request (a single word and a three-way question, no audio, no text you said) so the model is awake when your command arrives. In testing this took a typical 0.2 s off the first answer after a pause. At most one request every 20 seconds, and it never delays or fails a command. Only voice satellites trigger it; a phone or dashboard microphone does not."
         }
       },
       "tested": {
