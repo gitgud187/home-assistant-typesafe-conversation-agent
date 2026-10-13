@@ -38,6 +38,7 @@ from .executor import (
     async_execute_cancel,
     async_execute_query,
     describe_action,
+    describe_target,
 )
 from .extraction import extract
 from .llm_backend import LLMBackend, LLMBackendError
@@ -622,7 +623,7 @@ class TypeSafeAgent:
                     # The answer is the point of a question; keep what it said.
                     answers.append(answer)
                 else:
-                    done.append(plan.target.described)
+                    done.append(describe_target(plan, result))
             if failed:
                 skipped = [text for text, _ in plans[index + 1 :]]
                 break

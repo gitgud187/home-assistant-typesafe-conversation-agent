@@ -631,3 +631,114 @@ async def test_an_unknown_thermostat_setpoint_is_not_assumed(hass: HomeAssistant
         await _sent(
             hass, _relative("warmer", Target(entity=stat), 10, "climate"), [stat]
         )
+
+
+# --- what the spoken acknowledgement says ---------------------------------------
+
+
+def _spoken(plan, *results):
+    from custom_components.typesafe_conversation.executor import describe_action
+
+    response = intent.IntentResponse(language="en")
+    response.async_set_results(success_results=list(results))
+    return describe_action(plan, response)
+
+
+def _target(name, kind, ident=None):
+    return intent.IntentResponseTarget(
+        name=name, type=intent.IntentResponseTargetType(kind), id=ident
+    )
+
+
+def test_an_area_command_names_the_kind_and_the_area_not_them():
+    plan = Plan(
+        Route.COMMAND,
+        domain="light",
+        action="turn_on",
+        target=Target(area_id="kitchen", domain="light"),
+    )
+
+    spoken = _spoken(
+        plan,
+        _target("Kitchen", "area", "kitchen"),
+        _target("Ceiling", "entity", "light.a"),
+        _target("Under Cabinet", "entity", "light.b"),
+    )
+
+    assert spoken == "Turned on the lights in the kitchen."
+
+
+def test_an_area_that_held_one_device_names_that_device():
+    plan = Plan(
+        Route.COMMAND,
+        domain="light",
+        action="turn_on",
+        target=Target(area_id="kitchen", domain="light"),
+    )
+
+    spoken = _spoken(
+        plan,
+        _target("Kitchen", "area", "kitchen"),
+        _target("Light Strip", "entity", "light.strip"),
+    )
+
+    assert spoken == "Turned on Light Strip."
+
+
+@pytest.mark.parametrize(
+    ("floor", "phrase"),
+    [
+        ("Upstairs", "the lights upstairs"),
+        ("Ground Floor", "the lights on the ground floor"),
+        ("Basement", "the lights in the basement"),
+    ],
+)
+def test_a_floor_command_names_the_floor(floor, phrase):
+    plan = Plan(
+        Route.COMMAND,
+        domain="light",
+        action="turn_off",
+        target=Target(floor_name=floor, domain="light"),
+    )
+
+    spoken = _spoken(
+        plan,
+        _target(floor, "floor", floor.lower()),
+        _target("A", "entity", "light.a"),
+        _target("B", "entity", "light.b"),
+    )
+
+    assert spoken == f"Turned off {phrase}."
+
+
+def test_a_kind_with_no_place_named_is_all_of_them():
+    plan = Plan(
+        Route.COMMAND,
+        domain="fan",
+        action="turn_off",
+        target=Target(domain="fan"),
+    )
+
+    assert _spoken(plan) == "Turned off all the fans."
+
+
+def test_an_unknown_kind_still_says_something():
+    plan = Plan(
+        Route.COMMAND,
+        domain="mystery",
+        action="turn_on",
+        target=Target(domain="mystery"),
+    )
+
+    assert _spoken(plan) == "Turned on them."
+
+
+def test_everything_and_a_named_entity_are_unchanged():
+    everything = Plan(
+        Route.COMMAND,
+        domain="light",
+        action="turn_off",
+        target=Target(whole_house=True, domain="light"),
+    )
+
+    assert _spoken(everything) == "Turned off everything."

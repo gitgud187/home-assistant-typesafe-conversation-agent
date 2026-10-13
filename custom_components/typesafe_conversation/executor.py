@@ -598,7 +598,64 @@ def describe_action(plan: Plan, response: intent.IntentResponse | None = None) -
             return f"Playing {media['title']} on {plan.target.described}."
 
     verb = ACTION_VERBS.get(plan.action or "", "Did that to")
-    return f"{verb} {plan.target.described}."
+    return f"{verb} {describe_target(plan, response)}."
+
+
+# What to call several devices of one kind. Anything absent reads as "them".
+_PLURALS = {
+    "light": "lights",
+    "fan": "fans",
+    "switch": "switches",
+    "cover": "covers",
+    "media_player": "media players",
+    "climate": "thermostats",
+    "humidifier": "humidifiers",
+    "vacuum": "vacuum cleaners",
+    "lock": "locks",
+}
+# Floor names that already read as a place without a preposition.
+_FLOOR_ADVERBS = frozenset({"upstairs", "downstairs", "outside", "inside"})
+
+
+def _result_names(
+    response: intent.IntentResponse | None, kind: intent.IntentResponseTargetType
+) -> list[str]:
+    if response is None:
+        return []
+    return [r.name for r in response.success_results if r.type is kind]
+
+
+def describe_target(plan: Plan, response: intent.IntentResponse | None = None) -> str:
+    """Name what a command acted on, from what Home Assistant says it matched.
+
+    A single device is named. An area or floor says the kind and the place ("the
+    lights in the kitchen"), using the names in the response; when the area held
+    just one device, that device is named instead, which also tells the user which
+    one it was. "Them" is the last resort.
+    """
+    target = plan.target
+    if target.entity is not None:
+        return target.entity.name
+    if target.whole_house:
+        return "everything"
+
+    types = intent.IntentResponseTargetType
+    entities = _result_names(response, types.ENTITY)
+    if len(entities) == 1:
+        return entities[0]
+
+    plural = _PLURALS.get(plan.domain or "")
+    if plural is None:
+        return target.described
+    if floors := _result_names(response, types.FLOOR):
+        floor = floors[0].lower()
+        if floor in _FLOOR_ADVERBS:
+            return f"the {plural} {floor}"
+        preposition = "on" if "floor" in floor or "level" in floor else "in"
+        return f"the {plural} {preposition} the {floor}"
+    if areas := _result_names(response, types.AREA):
+        return f"the {plural} in the {areas[0].lower()}"
+    return f"all the {plural}"
 
 
 __all__ = [
@@ -608,4 +665,5 @@ __all__ = [
     "async_execute_query",
     "build_slots",
     "describe_action",
+    "describe_target",
 ]
