@@ -41,6 +41,10 @@ Q_LIST_ITEM_SPAN = "list_item_span"
 
 NO_AREA = "no_area"
 NO_SINGLE_ENTITY = "no_single_entity"
+NOT_LISTED = "not_listed"
+ENTITY_ESCAPES = 2
+"""Options on the entity question that are not entities: ``no_single_entity`` and
+``not_listed``. A server with a small option cap has room for that many fewer."""
 NO_DOMAIN = "none"
 NOT_TARGETED = "not_targeted"
 NO_VALUE = "none"
@@ -446,7 +450,14 @@ def target_entity_question(
         # every question can read. Inlining them again would duplicate ~2k
         # tokens for no new information.
         criteria = {e.entity_id: None for e in entities}
-    criteria[NO_SINGLE_ENTITY] = "No one specific entity is being targeted."
+    criteria[NO_SINGLE_ENTITY] = (
+        "A group of things, a whole room, the whole house, or nothing in "
+        "particular is being targeted."
+    )
+    criteria[NOT_LISTED] = (
+        "The request names one specific device that does not appear in "
+        "`home.entities`, so none of the entries above is what the user means."
+    )
     return {
         "type": "choice",
         "instructions": (
@@ -456,7 +467,10 @@ def target_entity_question(
             "area, kind and current state. Match on what the user means rather "
             "than on exact wording: 'get the coffee boiling' targets a coffee "
             f"maker. Choose '{NO_SINGLE_ENTITY}' when the request targets a "
-            "group of things, a whole room, the whole house, or nothing."
+            "group of things, a whole room, the whole house, or nothing. Choose "
+            f"'{NOT_LISTED}' when the user names one specific device and no "
+            "entry in `home.entities` is that device; do not pick the "
+            "nearest-sounding entry."
         ),
         "criteria": criteria,
     }
@@ -602,7 +616,7 @@ def build_questions(
                 len(areas),
                 max_options,
             )
-    if entities and fits(len(entities) + 1, max_options):
+    if entities and fits(len(entities) + ENTITY_ESCAPES, max_options):
         questions[Q_TARGET_ENTITY] = target_entity_question(
             entities, inline_descriptions
         )
@@ -681,6 +695,8 @@ def estimate_tokens(payload: Any) -> int:
 
 __all__ = [
     "COLOR_TEMP_PRESETS",
+    "ENTITY_ESCAPES",
+    "NOT_LISTED",
     "NOT_TARGETED",
     "NO_AREA",
     "NO_DOMAIN",

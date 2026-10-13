@@ -130,6 +130,41 @@ async def test_a_command_reaches_the_service(
     assert result.response.response_type is not None
 
 
+async def test_a_device_the_home_does_not_have_is_reported_and_nothing_runs(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+):
+    """The model says the named device is not in the home.
+
+    The old behaviour read out every device of that kind. Now the reply says it
+    could not find that, as an error a satellite does not take for success, and no
+    service is called.
+    """
+    await _setup_home(hass)
+    await _add_entry(hass, aioclient_mock)
+    body = _recorded("is_the_garage_door_open")
+    body["answers"]["target_entity"] = {
+        "type": "choice",
+        "choice": "not_listed",
+        "confidence": 0.97,
+        "probabilities": {"not_listed": 0.97, "no_single_entity": 0.03},
+    }
+    aioclient_mock.post(TYPESAFE_API_URL, json=body)
+    calls = async_mock_service(hass, "switch", "turn_on")
+
+    result = await conversation.async_converse(
+        hass,
+        "is the garage door open",
+        None,
+        None,
+        agent_id="conversation.typesafe_conversation",
+    )
+
+    assert result.response.response_type is intent.IntentResponseType.ERROR
+    assert result.response.error_code == intent.IntentResponseErrorCode.NO_VALID_TARGETS
+    assert "couldn't find" in result.response.speech["plain"]["speech"]
+    assert not calls
+
+
 async def test_an_empty_utterance_spends_no_request(
     hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
 ):

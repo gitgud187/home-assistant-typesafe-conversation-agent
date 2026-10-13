@@ -203,6 +203,22 @@ def _route_with(
     )
 
 
+# These two tests are about what happens when the named target is dead, not about
+# which entity the model names. The fixture was re-recorded with the question that
+# separates a group from a missing device, and for "the lights" the model now splits
+# between the group and the ceiling light (0.50 / 0.49) - a better reading of a
+# plural. This restores the earlier, confident answer so the scenario stays put.
+_NAMES_THE_KITCHEN_CEILING = ChoiceAnswer(
+    "light.kitchen_ceiling",
+    {
+        "light.kitchen_ceiling": 0.79,
+        "no_single_entity": 0.20,
+        "light.kitchen_under_cabinet": 0.01,
+    },
+    0.78,
+)
+
+
 def test_an_unavailable_target_is_named_not_dispatched(
     entities_by_id, available_domains
 ):
@@ -212,6 +228,7 @@ def test_an_unavailable_target_is_named_not_dispatched(
         entities_by_id,
         available_domains,
         dead=frozenset({"light.kitchen_ceiling", "light.kitchen_under_cabinet"}),
+        override_entity=_NAMES_THE_KITCHEN_CEILING,
     )
     assert plan.route is Route.UNAVAILABLE
     assert plan.speech == "Kitchen Ceiling is unavailable."
@@ -225,6 +242,7 @@ def test_a_weak_runner_up_is_not_promoted(entities_by_id, available_domains):
         entities_by_id,
         available_domains,
         dead=frozenset({"light.kitchen_ceiling"}),
+        override_entity=_NAMES_THE_KITCHEN_CEILING,
     )
     assert plan.route is Route.UNAVAILABLE
     assert "substituted_for" not in plan.trace
@@ -470,3 +488,77 @@ def test_a_genuine_tie_is_still_asked_about(entities_by_id, available_domains):
         "light.office_desk",
         "light.hall",
     }
+
+
+# --- a device the home does not have ---------------------------------------------
+
+
+def _missing(entities_by_id, available_domains, *, category, p_not_listed, conf):
+    """The model names a device that is not in the home.
+
+    ``p_not_listed`` and the rest go to ``no_single_entity``, as in the recorded
+    answers in docs/experiments/2026-10-13-not-listed-option.json.
+    """
+    return _plan(
+        entities_by_id,
+        available_domains,
+        spoken_from="kitchen",
+        category={
+            "type": "choice",
+            "choice": category,
+            "confidence": 0.96,
+            "probabilities": {category: 0.98, "information": 0.02},
+        },
+        target_entity={
+            "type": "choice",
+            "choice": "not_listed",
+            "confidence": conf,
+            "probabilities": {
+                "not_listed": p_not_listed,
+                "no_single_entity": round(1 - p_not_listed, 3),
+            },
+        },
+    )
+
+
+@pytest.mark.parametrize("category", ["command", "query"])
+def test_a_missing_device_is_reported_not_guessed(
+    entities_by_id, available_domains, category
+):
+    plan = _missing(
+        entities_by_id,
+        available_domains,
+        category=category,
+        p_not_listed=0.97,
+        conf=0.97,
+    )
+
+    assert plan.route is Route.NOT_FOUND, plan.reason
+
+
+def test_a_missing_device_at_the_weakest_recorded_confidence_is_still_reported(
+    entities_by_id, available_domains
+):
+    """The basement light: 0.58 against 0.41, the least sure answer recorded."""
+    plan = _missing(
+        entities_by_id,
+        available_domains,
+        category="query",
+        p_not_listed=0.58,
+        conf=0.57,
+    )
+
+    assert plan.route is Route.NOT_FOUND, plan.reason
+
+
+def test_a_doubtful_missing_device_is_not_reported(entities_by_id, available_domains):
+    """Below the bar the old behaviour stands; nothing here acts on a hunch."""
+    plan = _missing(
+        entities_by_id,
+        available_domains,
+        category="query",
+        p_not_listed=0.40,
+        conf=0.40,
+    )
+
+    assert plan.route is not Route.NOT_FOUND

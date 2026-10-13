@@ -163,6 +163,13 @@ T_CATEGORY_COMPOUND: Final = 0.50
 T_QUERY_KIND: Final = 0.50
 T_DOMAIN: Final = 0.50
 T_ENTITY: Final = 0.60
+T_NOT_LISTED: Final = 0.50
+"""Confidence for treating "a device that is not in this home" as the answer.
+
+Lower than ``T_ENTITY`` because the cost of being wrong is a spoken "I couldn't
+find that" and nothing done. In ``docs/experiments/2026-10-13-not-listed-option.md``
+the option was chosen for eight of ten missing devices at 0.57 to 1.00 and for none
+of twelve working requests (the highest probability it got on one was 0.01)."""
 T_AREA: Final = 0.55
 T_SCOPE: Final = 0.55
 T_SCOPE_WHOLE_HOUSE: Final = 0.60

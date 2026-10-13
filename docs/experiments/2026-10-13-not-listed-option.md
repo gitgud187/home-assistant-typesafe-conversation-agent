@@ -121,6 +121,40 @@ did not hurt group requests. It is a promising change but not yet shipped: it ne
 router rule for `not_listed`, a fallback for the non-solid cases, tests, and a check
 on the real instance with the exposed lights.
 
+## Follow-up: shipping variant A (v0.5.1)
+
+Variant A went into `questions.py` as written, plus `Route.NOT_FOUND` in the router,
+a spoken "Sorry, I couldn't find that." from the agent, and `T_NOT_LISTED = 0.50` in
+`const.py`. The threshold sits below `T_ENTITY` (0.60) on purpose: it was the lowest
+value that kept the weakest recorded correct answer (basement light, confidence 0.57)
+and a wrong guess costs only a spoken refusal with nothing done. The option is also
+carried through the second stage for homes over the option cap (`hierarchy.py`), and
+it takes a second slot beside `no_single_entity`, so `ENTITY_ESCAPES = 2` now reduces
+how many entities fit in one question on a small-cap server.
+
+**Fixtures re-recorded.** The 53 recorded answers in `tests/fixtures/answers/` and
+`tests/fixtures/scripted_answers/` were re-recorded with the new wording (53 requests,
+about $0.014). Four answer choices changed out of all the category, domain, scope,
+entity and area answers compared:
+
+| Fixture | Question | Before | After |
+|---|---|---|---|
+| close the blinds halfway | target_entity | `cover.lr_blinds` | `no_single_entity` 0.44 / `cover.lr_blinds` 0.37 |
+| make the lights a bit warmer | target_entity | `light.kitchen_ceiling` 0.79 | `no_single_entity` 0.50 / `light.kitchen_ceiling` 0.49 |
+| run the evening routine | target_area | `no_area` | `area_one` 0.55 / `no_area` 0.45 |
+| start the morning routine | target_area | `area_one` | `no_area` 0.52 / `area_one` 0.48 |
+| set up guest mode | scope | `single` | `whole_house` 0.50 / `single` 0.45 |
+
+The first two are the intended side effect: for plurals ("the lights") the group
+answer now competes with a single device. The last three are near-ties on questions
+the change did not touch, so they are probably run-to-run variation; this was not
+separated from an effect of the new wording.
+
+Two router tests depended on the old confident entity answer for "make the lights a
+bit warmer" and now restore it with `override_entity`, since they are about a dead
+target, not about what the model names. All other routes in `tests/test_router.py`
+held on the re-recorded answers.
+
 ## Reproduce
 
 ```sh

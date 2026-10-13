@@ -137,7 +137,7 @@ def test_the_worked_example_keeps_the_two_best_paths():
         "light.floor_lamp",
     }
     question = entity_stage_questions(plan.stage)[Q.Q_TARGET_ENTITY]
-    assert len(question["criteria"]) == 5, "four candidates and the escape"
+    assert len(question["criteria"]) == 6, "four candidates and the two escapes"
 
 
 def test_the_merge_scores_by_path_and_picks_the_lamp():
@@ -235,3 +235,33 @@ def test_a_path_that_would_overflow_the_question_is_skipped():
 
     assert [p.area_id for p in plan.stage.paths] == ["bedroom", "living_room"]
     assert len(plan.stage.candidates) == 4
+
+
+def test_not_listed_still_wins_when_stage_two_says_so():
+    """A device none of the narrowed candidates match must stay reachable."""
+    first = _response()
+    plan = plan_entity_stage(first, HOME, max_options=CAP)
+    second = SystemOneResponse(
+        model="nimble",
+        answers={
+            Q.Q_TARGET_ENTITY: _choice(
+                {
+                    "light.bedside_lamp": 0.02,
+                    "light.floor_lamp": 0.01,
+                    "light.bedroom_ceiling": 0.01,
+                    "light.living_room_ceiling": 0.01,
+                    Q.NO_SINGLE_ENTITY: 0.05,
+                    Q.NOT_LISTED: 0.90,
+                }
+            )
+        },
+        input_tokens=0,
+        output_tokens=0,
+        latency_ms=0.0,
+    )
+
+    merged = merge_entity_stage(first, second, plan.stage)
+
+    entity = merged.choice(Q.Q_TARGET_ENTITY)
+    assert entity.choice == Q.NOT_LISTED
+    assert sum(entity.probabilities.values()) == pytest.approx(1.0)

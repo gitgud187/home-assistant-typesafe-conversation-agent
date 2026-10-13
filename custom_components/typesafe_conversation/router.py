@@ -48,6 +48,7 @@ from .const import (
     T_DOMAIN,
     T_ENTITY,
     T_LLM_LEAN,
+    T_NOT_LISTED,
     T_QUERY_KIND,
     T_RISKY_ACTION,
     T_RISKY_TARGET,
@@ -71,6 +72,9 @@ class Route(StrEnum):
     CLARIFY = "clarify"
     CONFIRM = "confirm"
     FALLBACK = "fallback"
+    NOT_FOUND = "not_found"
+    """One specific device was named and it is not in the home. Terminal: a
+    domain-wide query or a fallback guess would answer about something else."""
     UNAVAILABLE = "unavailable"
     """The target exists but cannot act. Terminal, never the fallback ladder:
     hassil would resolve the same dead entity and the LLM would apologise
@@ -226,6 +230,21 @@ def route(
             "Compound noul %.2f is in the dead band; treating as a single command",
             compound,
         )
+
+    # -- 1b. a device was named that this home does not have ------------------
+    if kind in ("command", "query") and category.confidence >= T_CATEGORY_QUERY:
+        missing = response.choice(Q.Q_TARGET_ENTITY)
+        if (
+            missing is not None
+            and missing.choice == Q.NOT_LISTED
+            and _solid(missing, T_NOT_LISTED)
+        ):
+            trace["target_entity"] = _describe(missing)
+            return Plan(
+                Route.NOT_FOUND,
+                reason=f"names a device not in the home ({missing.confidence:.2f})",
+                trace=trace,
+            )
 
     # -- 2. nothing usable ----------------------------------------------------
     if kind == "unclear" and category.confidence >= T_CATEGORY_UNCLEAR:

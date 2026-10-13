@@ -130,10 +130,10 @@ def plan_entity_stage(
     """Pick the paths and candidates for the second request.
 
     Paths are ranked by ``p_domain * p_area`` and kept while their combined
-    entities still fit in one question beside the ``no_single_entity`` escape.
+    entities still fit in one question beside the two escape options.
     """
     entities = tuple(entities)
-    room = max_options - 1
+    room = max_options - Q.ENTITY_ESCAPES
     ranked = sorted(
         (p for p in _paths(response) if any(p.holds(e) for e in entities)),
         key=lambda p: -p.probability,
@@ -207,9 +207,9 @@ def merge_entity_stage(
         )
     # The escape option sits on the same scale as a candidate whose path took
     # all the kept probability, so stage two's "none of these" keeps its say.
-    weights[Q.NO_SINGLE_ENTITY] = sum(p.probability for p in stage.paths) * (
-        answer.probabilities.get(Q.NO_SINGLE_ENTITY, 0.0)
-    )
+    kept = sum(p.probability for p in stage.paths)
+    for escape in (Q.NO_SINGLE_ENTITY, Q.NOT_LISTED):
+        weights[escape] = kept * answer.probabilities.get(escape, 0.0)
 
     total = sum(weights.values()) or 1.0
     probabilities = {key: weight / total for key, weight in weights.items()}

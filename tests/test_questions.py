@@ -9,7 +9,9 @@ from custom_components.typesafe_conversation.const import MAX_CHOICE_OPTIONS
 from custom_components.typesafe_conversation.entities import CatalogEntity
 from custom_components.typesafe_conversation.extraction import extract
 from custom_components.typesafe_conversation.questions import (
+    NO_SINGLE_ENTITY,
     NO_VALUE,
+    NOT_LISTED,
     Q_COLOR_PICK,
     Q_TARGET_DOMAIN,
     Q_TARGET_ENTITY,
@@ -115,13 +117,38 @@ def test_a_home_over_the_cap_leaves_the_entity_for_a_second_request():
 
 def test_a_home_within_the_cap_is_asked_in_one_go():
     built = build_questions(
+        entities=_lights(24),
+        areas=(),
+        domains=("light",),
+        extraction=extract("", want_media=False, want_color=False),
+        max_options=26,
+    )
+    assert len(built[Q_TARGET_ENTITY]["criteria"]) == 26, "24 lights + two escapes"
+
+
+def test_a_home_that_only_fits_without_the_escapes_is_not_asked_in_one_go():
+    built = build_questions(
         entities=_lights(25),
         areas=(),
         domains=("light",),
         extraction=extract("", want_media=False, want_color=False),
         max_options=26,
     )
-    assert len(built[Q_TARGET_ENTITY]["criteria"]) == 26, "25 lights + the escape"
+    assert Q_TARGET_ENTITY not in built, "the second stage picks the device instead"
+
+
+def test_the_entity_question_separates_a_group_from_a_missing_device():
+    built = build_questions(
+        entities=_lights(3),
+        areas=(),
+        domains=("light",),
+        extraction=extract("", want_media=False, want_color=False),
+    )
+    question = built[Q_TARGET_ENTITY]
+    assert NOT_LISTED in question["criteria"]
+    assert NO_SINGLE_ENTITY in question["criteria"]
+    assert NOT_LISTED in question["instructions"]
+    assert "nearest-sounding" in question["instructions"]
 
 
 def test_choice_cap_is_enforced():

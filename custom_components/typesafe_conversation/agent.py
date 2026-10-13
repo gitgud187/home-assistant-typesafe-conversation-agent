@@ -415,6 +415,16 @@ class TypeSafeAgent:
                     user_input, f"Did you mean the {names}?", continue_conversation=True
                 )
 
+            case Route.NOT_FOUND:
+                # Terminal on purpose. Another matcher or the language model
+                # would pick the nearest thing and act on it, or read out every
+                # device of that kind.
+                return self._error(
+                    user_input,
+                    intent.IntentResponseErrorCode.NO_VALID_TARGETS,
+                    "Sorry, I couldn't find that.",
+                )
+
             case Route.UNAVAILABLE:
                 # Terminal. The fallback ladder would resolve the same dead
                 # entity via hassil, then have the LLM apologise vaguely.
