@@ -155,6 +155,15 @@ bit warmer" and now restore it with `override_entity`, since they are about a de
 target, not about what the model names. All other routes in `tests/test_router.py`
 held on the re-recorded answers.
 
+**Live check on a real instance (v0.5.1).** Details of the home are left out on
+purpose. Three requests for devices that were not exposed to Assist, two queries and
+one command, were each answered "Sorry, I couldn't find that." with error code
+`no_valid_targets` and nothing ran. Queries for exposed single devices (a light, a
+sensor, a media player by two different spoken names), a named-area group query and a
+state query that earlier returned no speech all behaved as before or better. Seven of
+seven live sentences matched the expected outcome. This is a handful of sentences,
+not a measurement.
+
 ## Reproduce
 
 ```sh
