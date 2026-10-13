@@ -1,0 +1,45 @@
+{
+  "model": "typesafe/jev-1.13",
+  "base_url": "https://openrouter.ai/api",
+  "idle_seconds": 40.0,
+  "summary": {
+    "A_alone": {
+      "n": 6,
+      "median_ms": 542,
+      "min_ms": 432,
+      "max_ms": 649
+    },
+    "B_after_tiny_request": {
+      "n": 6,
+      "median_ms": 334,
+      "min_ms": 289,
+      "max_ms": 446
+    }
+  },
+  "raw": {
+    "A_alone": [
+      649,
+      486,
+      642,
+      432,
+      542,
+      543
+    ],
+    "B_after_tiny_request": [
+      289,
+      342,
+      446,
+      342,
+      327,
+      306
+    ]
+  },
+  "tiny_request_ms": [
+    404,
+    321,
+    424,
+    629,
+    322,
+    312
+  ]
+}

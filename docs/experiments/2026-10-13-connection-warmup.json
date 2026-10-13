@@ -1,0 +1,79 @@
+{
+  "model": "typesafe/jev-1.13",
+  "base_url": "https://openrouter.ai/api",
+  "utterance": "turn off the kitchen ceiling light",
+  "summary": {
+    "new_connection_each_time": {
+      "n": 8,
+      "median_ms": 443,
+      "min_ms": 347,
+      "max_ms": 519
+    },
+    "reused_connection": {
+      "n": 8,
+      "median_ms": 345,
+      "min_ms": 310,
+      "max_ms": 592
+    },
+    "new_connection_after_prewarm": {
+      "n": 8,
+      "median_ms": 359,
+      "min_ms": 332,
+      "max_ms": 492
+    },
+    "prewarm_request_alone": {
+      "n": 8,
+      "median_ms": 131,
+      "min_ms": 99,
+      "max_ms": 176
+    }
+  },
+  "raw": {
+    "new_connection_each_time": [
+      519,
+      468,
+      455,
+      421,
+      406,
+      430,
+      347,
+      459
+    ],
+    "reused_connection": [
+      328,
+      407,
+      354,
+      319,
+      592,
+      336,
+      310,
+      414
+    ],
+    "new_connection_after_prewarm": [
+      362,
+      492,
+      332,
+      461,
+      349,
+      335,
+      448,
+      355
+    ],
+    "prewarm_request_alone": [
+      176,
+      126,
+      139,
+      122,
+      128,
+      138,
+      133,
+      99
+    ]
+  },
+  "idle_ms": {
+    "after_10s_idle": 313,
+    "after_30s_idle": 845,
+    "after_60s_idle": 666,
+    "after_90s_idle": 517
+  }
+}
