@@ -238,26 +238,38 @@ def test_every_offered_action_has_a_spec():
     assert not missing
 
 
-def test_no_media_action_routes_through_a_power_intent():
-    """Media players routinely expose no power at all.
+def test_media_players_are_offered_power_and_it_routes_to_the_power_intents():
+    """ "Turn off the TV" used to come back as pause, because nothing offered power.
 
-    A software endpoint - a streaming or cast player - commonly supports STOP
-    and PAUSE but not TURN_OFF, so HassTurnOff is rejected by the entity. The
-    rejection is easy to miss because Home Assistant counts the matched area
-    as a success, so the response still reports action_done.
+    Power is offered, and mapped to the power intents. Whether a given player can take
+    it is decided in the router, which falls back to pause and play for a player
+    without the feature or a request for an area (see test_router).
     """
     from custom_components.typesafe_conversation.actions import ACTIONS
     from custom_components.typesafe_conversation.questions import _ACTION_CRITERIA
 
-    power = {"HassTurnOn", "HassTurnOff"}
+    offered = _ACTION_CRITERIA["media_player"]
+    assert {"turn_on", "turn_off"} <= set(offered)
     routed = {
         action: spec.intent_type
         for (domain, action), spec in ACTIONS.items()
         if domain == "media_player"
     }
-    offered = _ACTION_CRITERIA["media_player"]
-    assert not {a for a in offered if routed.get(a) in power}
+    assert routed["turn_on"] == "HassTurnOn"
+    assert routed["turn_off"] == "HassTurnOff"
     # Home Assistant has no stop-media intent, so both words mean pause.
     assert routed["stop"] == routed["pause"] == "HassMediaPause"
     # ... and only one of them is offered, or they would split the vote.
-    assert "stop" not in _ACTION_CRITERIA["media_player"]
+    assert "stop" not in offered
+
+
+def test_the_power_feature_numbers_match_home_assistant():
+    from homeassistant.components.media_player import MediaPlayerEntityFeature
+
+    from custom_components.typesafe_conversation.actions import (
+        MEDIA_TURN_OFF,
+        MEDIA_TURN_ON,
+    )
+
+    assert MEDIA_TURN_ON == MediaPlayerEntityFeature.TURN_ON
+    assert MEDIA_TURN_OFF == MediaPlayerEntityFeature.TURN_OFF

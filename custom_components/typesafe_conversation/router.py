@@ -24,7 +24,13 @@ from enum import StrEnum
 from typing import Any
 
 from . import questions as Q
-from .actions import INCREASING_ACTIONS, ActionSpec, spec_for
+from .actions import (
+    INCREASING_ACTIONS,
+    MEDIA_TURN_OFF,
+    MEDIA_TURN_ON,
+    ActionSpec,
+    spec_for,
+)
 from .const import (
     CONF_ACT_EXPLICIT,
     CONF_ACT_TERSE,
@@ -596,6 +602,8 @@ def _plan_command(  # noqa: C901 - one decision tree, kept in one place on purpo
                     reason=f"no {domain} in area {chosen_area}",
                 )
 
+    action, spec = _within_what_the_player_can_do(domain, action, spec, target, trace)
+
     plan = Plan(
         Route.COMMAND,
         reason=f"{domain}.{action}",
@@ -650,6 +658,45 @@ def _plan_command(  # noqa: C901 - one decision tree, kept in one place on purpo
             deciding,
         )
     return plan
+
+
+# What to do instead when power is not safe for a media player: stopping what is
+# playing is the nearest thing a person asking for it means, and starting it likewise.
+_POWER_INSTEAD = {
+    "turn_off": ("pause", MEDIA_TURN_OFF),
+    "turn_on": ("play", MEDIA_TURN_ON),
+}
+
+
+def _within_what_the_player_can_do(
+    domain: str,
+    action: str,
+    spec: ActionSpec,
+    target: Target,
+    trace: dict[str, Any],
+) -> tuple[str, ActionSpec]:
+    """Power a media player only when one known player can be powered.
+
+    Many players are software endpoints with no power to cut. Home Assistant rejects
+    turn_off for them, and for an area it still reports the command as done because
+    the area matched, so a rejection is easy to miss. Power is therefore used only for
+    a single resolved player whose features include it. Anything else, a player
+    without the feature or a request for an area, pauses or resumes instead, which is
+    what this integration did for every media request before power was offered.
+    """
+    if domain != "media_player" or action not in _POWER_INSTEAD:
+        return action, spec
+    instead, feature = _POWER_INSTEAD[action]
+    if target.entity is not None and target.entity.supported_features & feature:
+        return action, spec
+    replacement = spec_for(domain, instead)
+    if replacement is None:
+        return action, spec
+    trace["power_unsupported"] = (
+        f"{action} -> {instead} "
+        f"({'no power on that player' if target.entity else 'not one player'})"
+    )
+    return instead, replacement
 
 
 def _resolve_floor(

@@ -562,3 +562,174 @@ def test_a_doubtful_missing_device_is_not_reported(entities_by_id, available_dom
     )
 
     assert plan.route is not Route.NOT_FOUND
+
+
+# --- powering a media player ---------------------------------------------------
+
+
+def _power_plan(entities_by_id, available_domains, *, action, features, entity=True):
+    """The model says "<action> the tv" with a confident, single target."""
+    from dataclasses import replace
+
+    from custom_components.typesafe_conversation.actions import (  # noqa: F401
+        MEDIA_TURN_OFF,
+    )
+
+    catalog = dict(entities_by_id)
+    catalog["media_player.tv"] = replace(
+        catalog["media_player.tv"], supported_features=features
+    )
+    overrides = {
+        "target_domain": {
+            "type": "choice",
+            "choice": "media_player",
+            "confidence": 1.0,
+            "probabilities": {"media_player": 1.0},
+        },
+        "action_media_player": {
+            "type": "choice",
+            "choice": action,
+            "confidence": 0.98,
+            "probabilities": {action: 0.98, "pause": 0.02},
+        },
+        "scope": {
+            "type": "choice",
+            "choice": "single" if entity else "area",
+            "confidence": 0.95,
+            "probabilities": (
+                {"single": 0.97, "area": 0.03}
+                if entity
+                else {"area": 0.97, "single": 0.03}
+            ),
+        },
+        "target_area": {
+            "type": "choice",
+            "choice": "living_room",
+            "confidence": 0.97,
+            "probabilities": {"living_room": 0.98, "no_area": 0.02},
+        },
+        "target_entity": {
+            "type": "choice",
+            "choice": "media_player.tv" if entity else "no_single_entity",
+            "confidence": 0.97,
+            "probabilities": (
+                {"media_player.tv": 0.98, "no_single_entity": 0.02}
+                if entity
+                else {"no_single_entity": 0.98, "media_player.tv": 0.02}
+            ),
+        },
+    }
+    return _plan(catalog, available_domains, spoken_from="living_room", **overrides)
+
+
+def test_a_player_that_can_power_off_is_powered_off(entities_by_id, available_domains):
+    from custom_components.typesafe_conversation.actions import MEDIA_TURN_OFF
+
+    plan = _power_plan(
+        entities_by_id,
+        available_domains,
+        action="turn_off",
+        features=MEDIA_TURN_OFF,
+    )
+
+    assert plan.route is Route.COMMAND, plan.reason
+    assert plan.action == "turn_off"
+    assert plan.spec.intent_type == "HassTurnOff"
+
+
+def test_a_player_that_can_power_on_is_powered_on(entities_by_id, available_domains):
+    from custom_components.typesafe_conversation.actions import MEDIA_TURN_ON
+
+    plan = _power_plan(
+        entities_by_id, available_domains, action="turn_on", features=MEDIA_TURN_ON
+    )
+
+    assert plan.action == "turn_on"
+    assert plan.spec.intent_type == "HassTurnOn"
+
+
+def test_a_player_without_power_is_paused_instead(entities_by_id, available_domains):
+    plan = _power_plan(entities_by_id, available_domains, action="turn_off", features=0)
+
+    assert plan.route is Route.COMMAND, plan.reason
+    assert plan.action == "pause"
+    assert plan.spec.intent_type == "HassMediaPause"
+    assert "turn_off -> pause" in plan.trace["power_unsupported"]
+
+
+def test_a_player_without_power_is_resumed_instead_of_turned_on(
+    entities_by_id, available_domains
+):
+    plan = _power_plan(entities_by_id, available_domains, action="turn_on", features=0)
+
+    assert plan.action == "play"
+    assert plan.spec.intent_type == "HassMediaUnpause"
+
+
+def test_power_is_not_used_when_no_single_player_was_named(
+    entities_by_id, available_domains
+):
+    """An area could hold players that reject power while reporting success."""
+    from custom_components.typesafe_conversation.actions import MEDIA_TURN_OFF
+
+    plan = _power_plan(
+        entities_by_id,
+        available_domains,
+        action="turn_off",
+        features=MEDIA_TURN_OFF,
+        entity=False,
+    )
+
+    assert plan.action == "pause"
+    assert "not one player" in plan.trace["power_unsupported"]
+
+
+@pytest.mark.parametrize(
+    ("fixture", "action", "intent"),
+    [
+        ("turn_off_the_tv", "turn_off", "HassTurnOff"),
+        ("turn_on_the_tv", "turn_on", "HassTurnOn"),
+        ("pause_the_tv", "pause", "HassMediaPause"),
+    ],
+)
+def test_recorded_tv_requests_power_the_tv_when_it_can_be_powered(
+    fixture, action, intent, entities_by_id, available_domains
+):
+    """Real answers: power words reach power, pause stays pause (jev-1.13)."""
+    from dataclasses import replace
+
+    from custom_components.typesafe_conversation.actions import (
+        MEDIA_TURN_OFF,
+        MEDIA_TURN_ON,
+    )
+
+    catalog = dict(entities_by_id)
+    catalog["media_player.tv"] = replace(
+        catalog["media_player.tv"], supported_features=MEDIA_TURN_ON | MEDIA_TURN_OFF
+    )
+
+    plan, utterance = _route(fixture, catalog, available_domains)
+
+    assert plan.route is Route.COMMAND, f"{utterance!r}: {plan.reason}"
+    assert plan.action == action
+    assert plan.spec.intent_type == intent
+
+
+@pytest.mark.parametrize(
+    ("fixture", "action"),
+    [("turn_off_the_tv", "pause"), ("turn_on_the_tv", "play")],
+)
+def test_recorded_tv_requests_fall_back_to_playback_without_a_power_feature(
+    fixture, action, entities_by_id, available_domains
+):
+    from dataclasses import replace
+
+    catalog = dict(entities_by_id)
+    catalog["media_player.tv"] = replace(
+        catalog["media_player.tv"], supported_features=0
+    )
+
+    plan, utterance = _route(fixture, catalog, available_domains)
+
+    assert plan.route is Route.COMMAND, f"{utterance!r}: {plan.reason}"
+    assert plan.action == action

@@ -27,11 +27,11 @@
         "probabilities": {
           "whole_house": 0,
           "floor": 0,
-          "area": 0.69,
-          "single": 0.27,
-          "not_a_target": 0.04
+          "area": 0.73,
+          "single": 0.24,
+          "not_a_target": 0.03
         },
-        "confidence": 0.61
+        "confidence": 0.66
       },
       "here_relative": {
         "type": "noul",
@@ -113,7 +113,7 @@
           "light.study_lamp": 0,
           "cover.side_door": 0,
           "media_player.study_speaker": 0.02,
-          "media_player.loft_speaker": 0.02,
+          "media_player.loft_speaker": 0.01,
           "vacuum.cleaner": 0,
           "switch.workshop_extractor": 0,
           "todo.list_one": 0,
@@ -123,10 +123,10 @@
           "script.security_arm_away": 0,
           "script.security_disarm": 0,
           "script.open_the_gate": 0,
-          "no_single_entity": 0.86,
-          "not_listed": 0.09
+          "no_single_entity": 0.88,
+          "not_listed": 0.08
         },
-        "confidence": 0.85
+        "confidence": 0.88
       },
       "target_domain": {
         "type": "choice",
@@ -190,7 +190,9 @@
         "type": "choice",
         "choice": "search_and_play",
         "probabilities": {
-          "play": 0.01,
+          "turn_on": 0,
+          "turn_off": 0,
+          "play": 0,
           "pause": 0,
           "next": 0,
           "previous": 0,
@@ -199,10 +201,10 @@
           "quieter": 0,
           "mute": 0,
           "unmute": 0,
-          "search_and_play": 0.99,
+          "search_and_play": 1,
           "not_targeted": 0
         },
-        "confidence": 0.99
+        "confidence": 1
       },
       "action_script": {
         "type": "choice",
@@ -217,12 +219,12 @@
         "type": "choice",
         "choice": "not_targeted",
         "probabilities": {
-          "turn_on": 0.05,
+          "turn_on": 0.04,
           "turn_off": 0.01,
           "toggle": 0,
-          "not_targeted": 0.94
+          "not_targeted": 0.95
         },
-        "confidence": 0.92
+        "confidence": 0.93
       },
       "action_todo": {
         "type": "choice",
@@ -260,19 +262,19 @@
         "type": "choice",
         "choice": "none",
         "probabilities": {
-          "jazz": 0.08,
+          "jazz": 0.07,
           "the workshop": 0,
-          "none": 0.92
+          "none": 0.93
         },
-        "confidence": 0.88
+        "confidence": 0.89
       }
     },
     "usage": {
-      "input_tokens": 6091,
-      "output_tokens": 1426,
-      "cost": 0.000255822
+      "input_tokens": 6123,
+      "output_tokens": 1442,
+      "cost": 0.000257166
     },
-    "id": "gen-dec-1791925506-rfhCifdf746UPBFXvhW2",
+    "id": "gen-dec-1791928636-lbu9fdSQKtFNvX8AfNS7",
     "provider": "TypeSafe"
   }
 }

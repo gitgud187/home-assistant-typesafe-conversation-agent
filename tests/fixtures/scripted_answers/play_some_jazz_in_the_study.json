@@ -19,7 +19,7 @@
       },
       "compound": {
         "type": "noul",
-        "noul": 0.07
+        "noul": 0.06
       },
       "scope": {
         "type": "choice",
@@ -27,11 +27,11 @@
         "probabilities": {
           "whole_house": 0,
           "floor": 0,
-          "area": 0.63,
-          "single": 0.36,
+          "area": 0.67,
+          "single": 0.32,
           "not_a_target": 0.01
         },
-        "confidence": 0.54
+        "confidence": 0.59
       },
       "here_relative": {
         "type": "noul",
@@ -112,7 +112,7 @@
           "sensor.zone_two_humidity": 0,
           "light.study_lamp": 0,
           "cover.side_door": 0,
-          "media_player.study_speaker": 0.84,
+          "media_player.study_speaker": 0.86,
           "media_player.loft_speaker": 0,
           "vacuum.cleaner": 0,
           "switch.workshop_extractor": 0,
@@ -123,10 +123,10 @@
           "script.security_arm_away": 0,
           "script.security_disarm": 0,
           "script.open_the_gate": 0,
-          "no_single_entity": 0.16,
+          "no_single_entity": 0.14,
           "not_listed": 0
         },
-        "confidence": 0.83
+        "confidence": 0.85
       },
       "target_domain": {
         "type": "choice",
@@ -190,6 +190,8 @@
         "type": "choice",
         "choice": "search_and_play",
         "probabilities": {
+          "turn_on": 0,
+          "turn_off": 0,
           "play": 0,
           "pause": 0,
           "next": 0,
@@ -208,21 +210,21 @@
         "type": "choice",
         "choice": "not_targeted",
         "probabilities": {
-          "run": 0.02,
-          "not_targeted": 0.98
+          "run": 0.01,
+          "not_targeted": 0.99
         },
-        "confidence": 0.96
+        "confidence": 0.98
       },
       "action_switch": {
         "type": "choice",
         "choice": "not_targeted",
         "probabilities": {
-          "turn_on": 0.12,
+          "turn_on": 0.11,
           "turn_off": 0,
           "toggle": 0,
-          "not_targeted": 0.88
+          "not_targeted": 0.89
         },
-        "confidence": 0.84
+        "confidence": 0.85
       },
       "action_todo": {
         "type": "choice",
@@ -260,19 +262,19 @@
         "type": "choice",
         "choice": "none",
         "probabilities": {
-          "some jazz": 0.1,
+          "some jazz": 0.11,
           "the study": 0,
-          "none": 0.9
+          "none": 0.89
         },
-        "confidence": 0.85
+        "confidence": 0.83
       }
     },
     "usage": {
-      "input_tokens": 6092,
-      "output_tokens": 1429,
-      "cost": 0.000255864
+      "input_tokens": 6124,
+      "output_tokens": 1445,
+      "cost": 0.000257208
     },
-    "id": "gen-dec-1791925501-1cXxi55yGTE9nLrta6o8",
+    "id": "gen-dec-1791928631-CBK6lEMXqpMIwuCmNqot",
     "provider": "TypeSafe"
   }
 }

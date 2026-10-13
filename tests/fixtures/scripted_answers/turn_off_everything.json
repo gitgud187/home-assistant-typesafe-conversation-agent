@@ -19,34 +19,34 @@
       },
       "compound": {
         "type": "noul",
-        "noul": 0.09
+        "noul": 0.1
       },
       "scope": {
         "type": "choice",
         "choice": "whole_house",
         "probabilities": {
-          "whole_house": 0.98,
+          "whole_house": 0.97,
           "floor": 0,
-          "area": 0.02,
+          "area": 0.03,
           "single": 0,
           "not_a_target": 0
         },
-        "confidence": 0.97
+        "confidence": 0.96
       },
       "here_relative": {
         "type": "noul",
-        "noul": 0.34
+        "noul": 0.36
       },
       "change_direction": {
         "type": "choice",
         "choice": "no_numeric",
         "probabilities": {
-          "absolute": 0.13,
+          "absolute": 0.1,
           "increase": 0,
           "decrease": 0.06,
-          "no_numeric": 0.81
+          "no_numeric": 0.84
         },
-        "confidence": 0.75
+        "confidence": 0.79
       },
       "magnitude": {
         "type": "choice",
@@ -55,10 +55,10 @@
           "slight": 0,
           "moderate": 0.01,
           "large": 0,
-          "maximum": 0.18,
-          "not_applicable": 0.81
+          "maximum": 0.21,
+          "not_applicable": 0.78
         },
-        "confidence": 0.76
+        "confidence": 0.73
       },
       "query_kind": {
         "type": "choice",
@@ -75,22 +75,22 @@
       },
       "risky": {
         "type": "noul",
-        "noul": 0.13
+        "noul": 0.15
       },
       "target_area": {
         "type": "choice",
         "choice": "no_area",
         "probabilities": {
-          "area_one": 0.29,
+          "area_one": 0.32,
           "area_two": 0,
           "area_three": 0,
           "area_four": 0,
           "upper_level": 0,
           "lower_level": 0,
           "yard": 0,
-          "no_area": 0.71
+          "no_area": 0.68
         },
-        "confidence": 0.67
+        "confidence": 0.63
       },
       "target_entity": {
         "type": "choice",
@@ -132,19 +132,19 @@
         "type": "choice",
         "choice": "none",
         "probabilities": {
-          "climate": 0,
+          "climate": 0.01,
           "cover": 0,
-          "light": 0.12,
+          "light": 0.15,
           "media_player": 0,
-          "script": 0.05,
+          "script": 0.04,
           "sensor": 0,
-          "switch": 0.24,
+          "switch": 0.31,
           "todo": 0,
           "vacuum": 0,
           "weather": 0,
-          "none": 0.59
+          "none": 0.49
         },
-        "confidence": 0.55
+        "confidence": 0.44
       },
       "action_climate": {
         "type": "choice",
@@ -164,12 +164,12 @@
         "choice": "close",
         "probabilities": {
           "open": 0,
-          "close": 0.74,
+          "close": 0.76,
           "stop": 0,
           "set_position": 0.02,
-          "not_targeted": 0.24
+          "not_targeted": 0.22
         },
-        "confidence": 0.68
+        "confidence": 0.7
       },
       "action_light": {
         "type": "choice",
@@ -188,30 +188,32 @@
       },
       "action_media_player": {
         "type": "choice",
-        "choice": "pause",
+        "choice": "turn_off",
         "probabilities": {
+          "turn_on": 0,
+          "turn_off": 0.95,
           "play": 0,
-          "pause": 0.75,
+          "pause": 0.01,
           "next": 0,
           "previous": 0,
-          "set_volume": 0.06,
+          "set_volume": 0,
           "louder": 0,
-          "quieter": 0.04,
-          "mute": 0.03,
+          "quieter": 0,
+          "mute": 0.01,
           "unmute": 0,
           "search_and_play": 0,
-          "not_targeted": 0.12
+          "not_targeted": 0.03
         },
-        "confidence": 0.72
+        "confidence": 0.95
       },
       "action_script": {
         "type": "choice",
         "choice": "not_targeted",
         "probabilities": {
-          "run": 0.28,
-          "not_targeted": 0.72
+          "run": 0.23,
+          "not_targeted": 0.77
         },
-        "confidence": 0.44
+        "confidence": 0.54
       },
       "action_switch": {
         "type": "choice",
@@ -229,31 +231,31 @@
         "choice": "not_targeted",
         "probabilities": {
           "add_item": 0,
-          "complete_item": 0.09,
-          "remove_item": 0.16,
-          "not_targeted": 0.75
+          "complete_item": 0.1,
+          "remove_item": 0.14,
+          "not_targeted": 0.76
         },
-        "confidence": 0.67
+        "confidence": 0.68
       },
       "action_vacuum": {
         "type": "choice",
         "choice": "return_to_base",
         "probabilities": {
           "start": 0,
-          "return_to_base": 0.79,
+          "return_to_base": 0.78,
           "clean_area": 0,
-          "not_targeted": 0.21
+          "not_targeted": 0.22
         },
-        "confidence": 0.72
+        "confidence": 0.71
       },
       "value_pick": {
         "type": "choice",
         "choice": "off",
         "probabilities": {
-          "off": 0.69,
-          "none": 0.31
+          "off": 0.72,
+          "none": 0.28
         },
-        "confidence": 0.38
+        "confidence": 0.44
       },
       "media_query_span": {
         "type": "choice",
@@ -275,11 +277,11 @@
       }
     },
     "usage": {
-      "input_tokens": 6181,
-      "output_tokens": 1428,
-      "cost": 0.000259602
+      "input_tokens": 6213,
+      "output_tokens": 1445,
+      "cost": 0.000260946
     },
-    "id": "gen-dec-1791925504-FXpAXnaaB5HrTGWThndz",
+    "id": "gen-dec-1791928634-fu9hw2IPUY03SSwSPxHK",
     "provider": "TypeSafe"
   }
 }

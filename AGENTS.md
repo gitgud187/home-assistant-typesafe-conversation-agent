@@ -55,6 +55,9 @@ model only picks among candidates and never computes values.
   (state queries) need speech added by this integration.
 - Below the confidence and margin bars the agent asks or falls back with nothing
   done. Risky actions (unlock, open, disarm) go through the confirm gate.
+- Re-record only the fixtures whose question changed. Re-recording the whole set flips
+  near-tied answers on questions you did not touch (13 answers across 53 fixtures here) and can push a
+  test across a threshold.
 - New behaviour needs a test that fails without it. Prefer replaying an existing
   fixture with one different input over recording a new one.
 - Ruff config in `ruff.toml` is enforced in CI; `max-complexity` is 15.

@@ -314,6 +314,12 @@ _ACTION_CRITERIA: dict[str, dict[str, str]] = {
         # Home Assistant registers, so heat/cool/auto/dry cannot be reached.
     },
     "media_player": {
+        # Without these two, "turn off the TV" came back as pause (0.91 to 0.97) and
+        # "turn on the TV" as play: nothing in the options was about power. Measured in
+        # docs/experiments/2026-10-13-media-power.md. A player that cannot be powered
+        # is handled in code (see router._within_what_the_player_can_do).
+        "turn_on": "Switch it on.",
+        "turn_off": "Switch it off.",
         "play": "Resume or start playback.",
         # Home Assistant has no stop-media intent, so "stop the music" and
         # "pause the music" can only resolve to the same action. Offering both

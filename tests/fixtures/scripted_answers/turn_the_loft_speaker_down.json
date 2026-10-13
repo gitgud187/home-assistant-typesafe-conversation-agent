@@ -83,14 +83,14 @@
         "probabilities": {
           "area_one": 0,
           "area_two": 0,
-          "area_three": 0.75,
+          "area_three": 0.66,
           "area_four": 0,
           "upper_level": 0.01,
           "lower_level": 0,
           "yard": 0,
-          "no_area": 0.24
+          "no_area": 0.33
         },
-        "confidence": 0.71
+        "confidence": 0.61
       },
       "target_entity": {
         "type": "choice",
@@ -154,10 +154,10 @@
           "turn_off": 0,
           "set_temperature": 0,
           "warmer": 0.01,
-          "cooler": 0.05,
-          "not_targeted": 0.94
+          "cooler": 0.03,
+          "not_targeted": 0.96
         },
-        "confidence": 0.93
+        "confidence": 0.95
       },
       "action_cover": {
         "type": "choice",
@@ -178,18 +178,20 @@
           "turn_on": 0,
           "turn_off": 0,
           "toggle": 0,
-          "set_brightness": 0,
+          "set_brightness": 0.01,
           "brighter": 0,
-          "dimmer": 0.06,
+          "dimmer": 0.07,
           "set_color": 0,
-          "not_targeted": 0.9400000000000001
+          "not_targeted": 0.92
         },
-        "confidence": 0.93
+        "confidence": 0.91
       },
       "action_media_player": {
         "type": "choice",
         "choice": "quieter",
         "probabilities": {
+          "turn_on": 0,
+          "turn_off": 0,
           "play": 0,
           "pause": 0,
           "next": 0,
@@ -218,11 +220,11 @@
         "choice": "not_targeted",
         "probabilities": {
           "turn_on": 0,
-          "turn_off": 0.03,
+          "turn_off": 0.04,
           "toggle": 0,
-          "not_targeted": 0.97
+          "not_targeted": 0.96
         },
-        "confidence": 0.96
+        "confidence": 0.95
       },
       "action_todo": {
         "type": "choice",
@@ -259,18 +261,18 @@
         "type": "choice",
         "choice": "none",
         "probabilities": {
-          "turn the loft speaker down": 0.02,
-          "none": 0.98
+          "turn the loft speaker down": 0.01,
+          "none": 0.99
         },
-        "confidence": 0.96
+        "confidence": 0.98
       }
     },
     "usage": {
-      "input_tokens": 6083,
-      "output_tokens": 1417,
-      "cost": 0.000255486
+      "input_tokens": 6115,
+      "output_tokens": 1433,
+      "cost": 0.00025683
     },
-    "id": "gen-dec-1791925502-QSEio5rCqVrK78eYPNC7",
+    "id": "gen-dec-1791928632-dqGl4VtJmmIkN7KpvouR",
     "provider": "TypeSafe"
   }
 }

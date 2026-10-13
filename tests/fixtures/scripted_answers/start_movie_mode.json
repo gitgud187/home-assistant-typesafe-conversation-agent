@@ -19,23 +19,23 @@
       },
       "compound": {
         "type": "noul",
-        "noul": 0.07
+        "noul": 0.06
       },
       "scope": {
         "type": "choice",
         "choice": "single",
         "probabilities": {
-          "whole_house": 0.37,
+          "whole_house": 0.35,
           "floor": 0,
           "area": 0.02,
-          "single": 0.51,
-          "not_a_target": 0.1
+          "single": 0.56,
+          "not_a_target": 0.07
         },
-        "confidence": 0.39
+        "confidence": 0.45
       },
       "here_relative": {
         "type": "noul",
-        "noul": 0.28
+        "noul": 0.26
       },
       "change_direction": {
         "type": "choice",
@@ -75,7 +75,7 @@
       },
       "risky": {
         "type": "noul",
-        "noul": 0.08
+        "noul": 0.07
       },
       "target_area": {
         "type": "choice",
@@ -153,56 +153,58 @@
           "turn_on": 0.01,
           "turn_off": 0.01,
           "set_temperature": 0.03,
-          "warmer": 0.04,
+          "warmer": 0.06,
           "cooler": 0.05,
-          "not_targeted": 0.86
+          "not_targeted": 0.84
         },
-        "confidence": 0.83
+        "confidence": 0.81
       },
       "action_cover": {
         "type": "choice",
         "choice": "not_targeted",
         "probabilities": {
           "open": 0,
-          "close": 0.25,
+          "close": 0.33,
           "stop": 0,
-          "set_position": 0,
-          "not_targeted": 0.75
+          "set_position": 0.01,
+          "not_targeted": 0.66
         },
-        "confidence": 0.69
+        "confidence": 0.57
       },
       "action_light": {
         "type": "choice",
         "choice": "not_targeted",
         "probabilities": {
           "turn_on": 0.01,
-          "turn_off": 0.19,
+          "turn_off": 0.23,
           "toggle": 0,
           "set_brightness": 0.02,
           "brighter": 0,
-          "dimmer": 0.24,
+          "dimmer": 0.21,
           "set_color": 0,
-          "not_targeted": 0.54
+          "not_targeted": 0.53
         },
-        "confidence": 0.47
+        "confidence": 0.46
       },
       "action_media_player": {
         "type": "choice",
-        "choice": "play",
+        "choice": "turn_on",
         "probabilities": {
-          "play": 0.58,
+          "turn_on": 0.45,
+          "turn_off": 0.02,
+          "play": 0.26,
           "pause": 0,
           "next": 0,
           "previous": 0,
           "set_volume": 0.01,
           "louder": 0,
           "quieter": 0.03,
-          "mute": 0.02,
+          "mute": 0.01,
           "unmute": 0,
-          "search_and_play": 0.05,
-          "not_targeted": 0.31
+          "search_and_play": 0.02,
+          "not_targeted": 0.2
         },
-        "confidence": 0.54
+        "confidence": 0.4
       },
       "action_script": {
         "type": "choice",
@@ -218,11 +220,11 @@
         "choice": "not_targeted",
         "probabilities": {
           "turn_on": 0.03,
-          "turn_off": 0.13,
+          "turn_off": 0.15,
           "toggle": 0,
-          "not_targeted": 0.84
+          "not_targeted": 0.8200000000000001
         },
-        "confidence": 0.79
+        "confidence": 0.76
       },
       "action_todo": {
         "type": "choice",
@@ -259,18 +261,18 @@
         "type": "choice",
         "choice": "none",
         "probabilities": {
-          "start movie mode": 0.02,
-          "none": 0.98
+          "start movie mode": 0.03,
+          "none": 0.97
         },
-        "confidence": 0.96
+        "confidence": 0.94
       }
     },
     "usage": {
-      "input_tokens": 6077,
-      "output_tokens": 1407,
-      "cost": 0.000255234
+      "input_tokens": 6109,
+      "output_tokens": 1424,
+      "cost": 0.000256578
     },
-    "id": "gen-dec-1791925499-B7n5Z9vltQVnvMx6Tero",
+    "id": "gen-dec-1791928629-io6VsJZH4VKxZie4uOhK",
     "provider": "TypeSafe"
   }
 }

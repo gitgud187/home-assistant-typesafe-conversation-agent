@@ -1,0 +1,779 @@
+{
+  "model": "typesafe/jev-1.13",
+  "results": [
+    {
+      "variant": "baseline",
+      "utterance": "turn off the tv",
+      "kind": "power",
+      "acceptable": [
+        "turn_off"
+      ],
+      "action_top": "pause",
+      "action_confidence": 0.92,
+      "p_top": 0.93,
+      "p_turn_off": 0,
+      "p_pause": 0.93,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": false
+    },
+    {
+      "variant": "baseline",
+      "utterance": "turn on the tv",
+      "kind": "power",
+      "acceptable": [
+        "turn_on"
+      ],
+      "action_top": "play",
+      "action_confidence": 0.97,
+      "p_top": 0.97,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.play",
+      "pass": false
+    },
+    {
+      "variant": "baseline",
+      "utterance": "switch off the television",
+      "kind": "power",
+      "acceptable": [
+        "turn_off"
+      ],
+      "action_top": "pause",
+      "action_confidence": 0.9,
+      "p_top": 0.91,
+      "p_turn_off": 0,
+      "p_pause": 0.91,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": false
+    },
+    {
+      "variant": "baseline",
+      "utterance": "shut the tv off",
+      "kind": "power",
+      "acceptable": [
+        "turn_off"
+      ],
+      "action_top": "pause",
+      "action_confidence": 0.96,
+      "p_top": 0.96,
+      "p_turn_off": 0,
+      "p_pause": 0.96,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": false
+    },
+    {
+      "variant": "baseline",
+      "utterance": "power on the tv",
+      "kind": "power",
+      "acceptable": [
+        "turn_on"
+      ],
+      "action_top": "play",
+      "action_confidence": 0.89,
+      "p_top": 0.9,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.play",
+      "pass": false
+    },
+    {
+      "variant": "baseline",
+      "utterance": "pause the tv",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "pause",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 1,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": true
+    },
+    {
+      "variant": "baseline",
+      "utterance": "pause the movie",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "pause",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 1,
+      "route": "fallback",
+      "plan_reason": "scope=single but no confident entity",
+      "pass": true
+    },
+    {
+      "variant": "baseline",
+      "utterance": "stop the music",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "pause",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 1,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": true
+    },
+    {
+      "variant": "baseline",
+      "utterance": "turn the music off",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "pause",
+      "action_confidence": 0.91,
+      "p_top": 0.92,
+      "p_turn_off": 0,
+      "p_pause": 0.92,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": true
+    },
+    {
+      "variant": "baseline",
+      "utterance": "resume the movie",
+      "kind": "playback",
+      "acceptable": [
+        "play"
+      ],
+      "action_top": "play",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "clarify",
+      "plan_reason": "scope=single but no confident entity",
+      "pass": true
+    },
+    {
+      "variant": "baseline",
+      "utterance": "unpause the tv",
+      "kind": "playback",
+      "acceptable": [
+        "play"
+      ],
+      "action_top": "play",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.play",
+      "pass": true
+    },
+    {
+      "variant": "baseline",
+      "utterance": "turn off the living room speaker",
+      "kind": "either",
+      "acceptable": [
+        "pause",
+        "turn_off"
+      ],
+      "action_top": "pause",
+      "action_confidence": 0.99,
+      "p_top": 0.99,
+      "p_turn_off": 0,
+      "p_pause": 0.99,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": true
+    },
+    {
+      "variant": "baseline",
+      "utterance": "turn the speaker off",
+      "kind": "either",
+      "acceptable": [
+        "pause",
+        "turn_off"
+      ],
+      "action_top": "pause",
+      "action_confidence": 0.99,
+      "p_top": 0.99,
+      "p_turn_off": 0,
+      "p_pause": 0.99,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": true
+    },
+    {
+      "variant": "baseline",
+      "utterance": "mute the tv",
+      "kind": "other",
+      "acceptable": [
+        "mute"
+      ],
+      "action_top": "mute",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.mute",
+      "pass": true
+    },
+    {
+      "variant": "baseline",
+      "utterance": "turn it up a bit",
+      "kind": "other",
+      "acceptable": [
+        "louder"
+      ],
+      "action_top": "louder",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.louder",
+      "pass": true
+    },
+    {
+      "variant": "baseline",
+      "utterance": "play some jazz in the living room",
+      "kind": "other",
+      "acceptable": [
+        "search_and_play"
+      ],
+      "action_top": "search_and_play",
+      "action_confidence": 0.99,
+      "p_top": 0.99,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.search_and_play",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "turn off the tv",
+      "kind": "power",
+      "acceptable": [
+        "turn_off"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 1,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "turn on the tv",
+      "kind": "power",
+      "acceptable": [
+        "turn_on"
+      ],
+      "action_top": "turn_on",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.turn_on",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "switch off the television",
+      "kind": "power",
+      "acceptable": [
+        "turn_off"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 1,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "shut the tv off",
+      "kind": "power",
+      "acceptable": [
+        "turn_off"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 1,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "power on the tv",
+      "kind": "power",
+      "acceptable": [
+        "turn_on"
+      ],
+      "action_top": "turn_on",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.turn_on",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "pause the tv",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "pause",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 1,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "pause the movie",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "pause",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 1,
+      "route": "fallback",
+      "plan_reason": "scope=single but no confident entity",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "stop the music",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "pause",
+      "action_confidence": 0.99,
+      "p_top": 0.99,
+      "p_turn_off": 0.01,
+      "p_pause": 0.99,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "turn the music off",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 0.66,
+      "p_top": 0.69,
+      "p_turn_off": 0.69,
+      "p_pause": 0.25,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": false
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "resume the movie",
+      "kind": "playback",
+      "acceptable": [
+        "play"
+      ],
+      "action_top": "play",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "fallback",
+      "plan_reason": "scope=single but no confident entity",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "unpause the tv",
+      "kind": "playback",
+      "acceptable": [
+        "play"
+      ],
+      "action_top": "play",
+      "action_confidence": 0.97,
+      "p_top": 0.97,
+      "p_turn_off": 0,
+      "p_pause": 0.01,
+      "route": "command",
+      "plan_reason": "media_player.play",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "turn off the living room speaker",
+      "kind": "either",
+      "acceptable": [
+        "pause",
+        "turn_off"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 0.99,
+      "p_top": 0.99,
+      "p_turn_off": 0.99,
+      "p_pause": 0.01,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "turn the speaker off",
+      "kind": "either",
+      "acceptable": [
+        "pause",
+        "turn_off"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 0.99,
+      "p_top": 0.99,
+      "p_turn_off": 0.99,
+      "p_pause": 0.01,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "mute the tv",
+      "kind": "other",
+      "acceptable": [
+        "mute"
+      ],
+      "action_top": "mute",
+      "action_confidence": 0.99,
+      "p_top": 0.99,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.mute",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "turn it up a bit",
+      "kind": "other",
+      "acceptable": [
+        "louder"
+      ],
+      "action_top": "louder",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.louder",
+      "pass": true
+    },
+    {
+      "variant": "P1_power_described",
+      "utterance": "play some jazz in the living room",
+      "kind": "other",
+      "acceptable": [
+        "search_and_play"
+      ],
+      "action_top": "search_and_play",
+      "action_confidence": 0.97,
+      "p_top": 0.97,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.search_and_play",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "turn off the tv",
+      "kind": "power",
+      "acceptable": [
+        "turn_off"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 0.98,
+      "p_top": 0.98,
+      "p_turn_off": 0.98,
+      "p_pause": 0.01,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "turn on the tv",
+      "kind": "power",
+      "acceptable": [
+        "turn_on"
+      ],
+      "action_top": "turn_on",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.turn_on",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "switch off the television",
+      "kind": "power",
+      "acceptable": [
+        "turn_off"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 0.98,
+      "p_top": 0.98,
+      "p_turn_off": 0.98,
+      "p_pause": 0.01,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "shut the tv off",
+      "kind": "power",
+      "acceptable": [
+        "turn_off"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 0.99,
+      "p_top": 0.99,
+      "p_turn_off": 0.99,
+      "p_pause": 0.01,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "power on the tv",
+      "kind": "power",
+      "acceptable": [
+        "turn_on"
+      ],
+      "action_top": "turn_on",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.turn_on",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "pause the tv",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "pause",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 1,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "pause the movie",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "pause",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 1,
+      "route": "fallback",
+      "plan_reason": "scope=single but no confident entity",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "stop the music",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "pause",
+      "action_confidence": 0.96,
+      "p_top": 0.96,
+      "p_turn_off": 0.04,
+      "p_pause": 0.96,
+      "route": "command",
+      "plan_reason": "media_player.pause",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "turn the music off",
+      "kind": "playback",
+      "acceptable": [
+        "pause"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 0.9,
+      "p_top": 0.91,
+      "p_turn_off": 0.91,
+      "p_pause": 0.06,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": false
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "resume the movie",
+      "kind": "playback",
+      "acceptable": [
+        "play"
+      ],
+      "action_top": "play",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "clarify",
+      "plan_reason": "scope=single but no confident entity",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "unpause the tv",
+      "kind": "playback",
+      "acceptable": [
+        "play"
+      ],
+      "action_top": "play",
+      "action_confidence": 0.99,
+      "p_top": 0.99,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.play",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "turn off the living room speaker",
+      "kind": "either",
+      "acceptable": [
+        "pause",
+        "turn_off"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 0.99,
+      "p_top": 0.99,
+      "p_turn_off": 0.99,
+      "p_pause": 0.01,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "turn the speaker off",
+      "kind": "either",
+      "acceptable": [
+        "pause",
+        "turn_off"
+      ],
+      "action_top": "turn_off",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 1,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.turn_off",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "mute the tv",
+      "kind": "other",
+      "acceptable": [
+        "mute"
+      ],
+      "action_top": "mute",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.mute",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "turn it up a bit",
+      "kind": "other",
+      "acceptable": [
+        "louder"
+      ],
+      "action_top": "louder",
+      "action_confidence": 1,
+      "p_top": 1,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.louder",
+      "pass": true
+    },
+    {
+      "variant": "P2_power_short",
+      "utterance": "play some jazz in the living room",
+      "kind": "other",
+      "acceptable": [
+        "search_and_play"
+      ],
+      "action_top": "search_and_play",
+      "action_confidence": 0.98,
+      "p_top": 0.98,
+      "p_turn_off": 0,
+      "p_pause": 0,
+      "route": "command",
+      "plan_reason": "media_player.search_and_play",
+      "pass": true
+    }
+  ]
+}

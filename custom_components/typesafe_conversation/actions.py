@@ -31,6 +31,11 @@ INTENT_GET_CURRENT_TIME: Final = "HassGetCurrentTime"
 INTENT_GET_CURRENT_DATE: Final = "HassGetCurrentDate"
 INTENT_MEDIA_PAUSE: Final = "HassMediaPause"
 INTENT_MEDIA_UNPAUSE: Final = "HassMediaUnpause"
+
+# MediaPlayerEntityFeature.TURN_ON and TURN_OFF. Written as numbers so the pure router
+# does not import the media_player component; a test pins them to the enum.
+MEDIA_TURN_ON: Final = 128
+MEDIA_TURN_OFF: Final = 256
 INTENT_MEDIA_NEXT: Final = "HassMediaNext"
 INTENT_MEDIA_PREVIOUS: Final = "HassMediaPrevious"
 INTENT_MEDIA_MUTE: Final = "HassMediaPlayerMute"
